@@ -6,6 +6,7 @@ export interface Patientlist extends Document {
     email: string;
     bio: string;
     profilePicture: string;
+    patient: mongoose.Types.ObjectId;
     doctor: mongoose.Types.ObjectId;
     patientStatus: "current"| "old";
     createdOn: Date;
@@ -13,10 +14,11 @@ export interface Patientlist extends Document {
 
 const PatientListSchema : Schema<Patientlist> = new Schema({
     name:{type:String, required: true},
-    email: {type: String, required: true, unique: true},
+    email: {type: String, required: true},
     bio:{type: String},
     profilePicture: {type:String},
     doctor:{type: mongoose.Schema.Types.ObjectId, ref:'User', required: true},
+    patient:{type: mongoose.Schema.Types.ObjectId, ref:'User', required: true},
     patientStatus: {
         type: String,
         required: true,

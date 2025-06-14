@@ -1,7 +1,9 @@
 import User, { User as UserType } from "../models/user.model";
 import patientLabResult from "../models/labresults.model";
+import cloudinary from "../lib/cloudinary";
 import PatientList from "../models/patientlist.model";
 import { Request, Response } from "express";
+import fs from "fs";
 
 export const addNewPatient = async (
   req: Request,
@@ -38,6 +40,7 @@ export const addNewPatient = async (
 
     const isPatientAlreadyInList = await PatientList.findOne({
       email: patient?.email,
+      doctor: currentUser?._id,
     });
 
     if (isPatientAlreadyInList) {
@@ -52,6 +55,7 @@ export const addNewPatient = async (
       email: patient?.email,
       bio: patient?.bio,
       profilePicture: patient?.profilePicture,
+      patient: patient?._id,
       doctor: currentUser?._id,
       patientStatus: "current",
     });
@@ -103,6 +107,12 @@ export const uploadLabResults = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
   const { title } = req.body;
   const { patientId } = req.params;
 
@@ -114,14 +124,29 @@ export const uploadLabResults = async (
     return;
   }
 
+  if (!req.file) {
+    res.status(400).json({ message: "No file uploaded" });
+    return;
+  }
+
   try {
+    const cloudinaryResult = await cloudinary.uploader.upload(req.file?.path!, {
+      folder: "lab-results",
+    });
+
+    if (req.file?.path) {
+      fs.unlinkSync(req.file?.path);
+    }
+
+    const fileLink = cloudinaryResult.secure_url;
+
     const newPatientLabResult = new patientLabResult({
       title: title,
-      labResult: "",
+      labResult: fileLink,
       patient: patientId,
     });
 
-    newPatientLabResult.save();
+    await newPatientLabResult.save();
 
     res.status(200).json({
       message: "Patient lab result uploaded sucessfully",
