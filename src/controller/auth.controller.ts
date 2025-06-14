@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
 import { generateToken } from "../lib/utils";
-import User, { User as UserType } from "../models/user.models";
+import User, { User as UserType } from "../models/user.model";
 
 export const register = async (
   req: Request,

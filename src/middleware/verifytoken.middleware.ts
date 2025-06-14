@@ -1,12 +1,12 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
-import User from "../models/user.models";
+import User from "../models/user.model";
 import { Request, Response, NextFunction } from "express";
 
 const verifyToken = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void | Response> => {
+): Promise<void> => {
   try {
     const token = await req.cookies.token;
 
