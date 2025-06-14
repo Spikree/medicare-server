@@ -13,7 +13,7 @@ export interface User extends Document {
 }
 
 const userSchema: Schema<User> = new Schema({
-  name: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, unique: true },
   role: {
