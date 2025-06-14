@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import connectDb from "./lib/connectToDb";
 
 import authRouter from "./routes/auth.route"
+import doctorRouter from "./routes/doctor.routes"
 
 const app: Application = express();
 app.use(cookieParser());
@@ -15,6 +16,7 @@ const port = process.env.PORT || 6000;
 connectDb();
 
 app.use("/auth",authRouter )
+app.use("/doctor",doctorRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Backend is working");

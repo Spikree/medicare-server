@@ -2,11 +2,16 @@ import { Response } from "express";
 
 import jwt from "jsonwebtoken";
 
-export const generateToken = (userId: string, res: Response) => {
+interface TokenPayload {
+  _id: string;
+  role:"doctor"|"patient"
+}
+
+export const generateToken = (user: TokenPayload, res: Response) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined");
   }
-  const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ user }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 

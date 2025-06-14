@@ -50,11 +50,17 @@ export const register = async (
       }) as UserType) || null;
 
     if (newUser) {
-      generateToken(newUser._id.toString(), res);
       await newUser.save();
 
       const newUserObj = newUser.toObject();
       delete newUserObj.password;
+
+      const tokenPayload = {
+        _id: newUserObj._id,
+        role: newUserObj.role,
+      };
+
+      generateToken(tokenPayload, res);
 
       return res.json({
         user: newUserObj,
@@ -92,7 +98,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
   }
 
   try {
-    const user = (await User.findOne({ email })) as UserType | null;
+    const user = (await User.findOne({ email })) as UserType;
 
     if (!user) {
       return res.status(404).json({
@@ -107,11 +113,15 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         message: "Invalid credentials",
       });
     }
-
-    generateToken(user._id.toString(), res);
-
     const UserObj = user.toObject();
     delete UserObj.password;
+
+    const tokenPayload = {
+      _id: UserObj._id,
+      role: UserObj.role,
+    };
+
+    generateToken(tokenPayload, res);
 
     return res.status(200).json({
       message: "Logged in sucessfully",
