@@ -261,3 +261,42 @@ export const getPatientDetails = async (
     return;
   }
 };
+
+export const getPatientLabResults = async (req: Request, res: Response) => {
+  const { patientId } = req.params;
+
+  if (!patientId) {
+    res.status(400).json({
+      message: "Please provide a patient id",
+    });
+    return;
+  }
+
+  console.log(patientId)
+
+  try {
+    const patientLabResults = await patientLabResult.find({
+      patient: patientId
+    });
+
+    if(!patientLabResults) {
+      res.status(404).json({
+        message:"Patient lab results not found"
+      });
+
+      return;
+    }
+
+    res.status(200).json({
+      message: "Fetched patient lab results sucessfully",
+      patientLabResults
+    })
+
+  } catch (error) {
+    console.log("error in doctor controller at get patient lab results", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};

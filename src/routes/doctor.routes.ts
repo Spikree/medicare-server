@@ -3,6 +3,7 @@ import {
   addNewPatient,
   addPatientDetails,
   getPatientDetails,
+  getPatientLabResults,
   getPatientList,
   uploadLabResults,
 } from "../controller/doctor.controller";
@@ -19,8 +20,10 @@ router.post(
   upload.single("labFile"),
   uploadLabResults
 );
-router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
 router.post("/addPatientDetails/:patientId", verifyToken, checkDoctorRole,addPatientDetails);
+
+router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
 router.get("/getPatientDetails/:patientId", verifyToken, checkDoctorRole, getPatientDetails);
+router.get("/getPatientLabResults/:patientId", verifyToken, checkDoctorRole,getPatientLabResults);
 
 export default router;
