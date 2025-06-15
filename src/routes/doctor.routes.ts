@@ -1,6 +1,7 @@
 import express from "express";
 import {
   addNewPatient,
+  addPatientDetails,
   getPatientList,
   uploadLabResults,
 } from "../controller/doctor.controller";
@@ -18,5 +19,6 @@ router.post(
   uploadLabResults
 );
 router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
+router.post("/addPatientDisease/:patientId", verifyToken, checkDoctorRole,addPatientDetails);
 
 export default router;

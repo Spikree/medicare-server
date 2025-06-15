@@ -4,6 +4,7 @@ import cloudinary from "../lib/cloudinary";
 import PatientList from "../models/patientlist.model";
 import { Request, Response } from "express";
 import fs from "fs";
+import PatientDetail from "../models/patientdetails.model";
 
 export const addNewPatient = async (
   req: Request,
@@ -154,6 +155,68 @@ export const uploadLabResults = async (
     });
   } catch (error: unknown) {
     console.log("error in doctor controller at upload lab results", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const addPatientDetails = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
+  const { Disease, symptom, patientFeedback, medicationPrescribed } = req.body;
+  const { patientId } = req.params;
+  const currentUser = req.user;
+
+  if (!Disease || !symptom || !patientFeedback || !medicationPrescribed) {
+    res.status(400).json({
+      message: "Please fill in the required fields",
+    });
+    return;
+  }
+
+  if (!patientId) {
+    res.status(400).json({
+      message: "please provide a patient id",
+    });
+    return;
+  }
+
+  try {
+    const patient = await User.findById(patientId);
+
+    if (!patient) {
+      res.status(404).json({
+        message: "No patient with this id",
+      });
+    }
+
+    const patientDetail = new PatientDetail({
+      name: patient?.name,
+      patient: patientId,
+      doctor: currentUser?.id,
+      Disease: Disease,
+      symptom: symptom,
+      patientFeedback: patientFeedback,
+      medicationPrescribed: medicationPrescribed,
+    });
+
+    await patientDetail.save();
+
+    res.status(200).json({
+      message: "Patient details added sucessfully",
+      patientDetail,
+    });
+  } catch (error) {
+    console.log("error in doctor controller at add patient details", error);
     res.status(500).json({
       message: "Internal server error",
     });

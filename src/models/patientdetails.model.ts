@@ -9,7 +9,6 @@ export interface PatientDetails extends Document {
   symptom: string;
   patientFeedback: string;
   medicationPrescribed: string;
-  alergies: string;
   createdOn: Date;
 }
 
@@ -25,7 +24,6 @@ const PatientDetailsSchema: Schema<PatientDetails> = new Schema({
   symptom: { type: String, required: true },
   patientFeedback: { type: String, required: true },
   medicationPrescribed: { type: String, required: true },
-  alergies: { type: String, required: true },
   createdOn: { type: Date, default: () => new Date() },
 });
 
