@@ -2,6 +2,7 @@ import express from "express";
 import {
   addNewPatient,
   addPatientDetails,
+  getPatientDetails,
   getPatientList,
   uploadLabResults,
 } from "../controller/doctor.controller";
@@ -19,6 +20,7 @@ router.post(
   uploadLabResults
 );
 router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
-router.post("/addPatientDisease/:patientId", verifyToken, checkDoctorRole,addPatientDetails);
+router.post("/addPatientDetails/:patientId", verifyToken, checkDoctorRole,addPatientDetails);
+router.get("/getPatientDetails/:patientId", verifyToken, checkDoctorRole, getPatientDetails);
 
 export default router;

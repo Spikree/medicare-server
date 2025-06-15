@@ -223,3 +223,41 @@ export const addPatientDetails = async (
     return;
   }
 };
+
+export const getPatientDetails = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { patientId } = req.params;
+
+  if (!patientId) {
+    res.status(400).json({
+      message: "Please provide a patient id",
+    });
+    return;
+  }
+
+  try {
+    const patientDetails = await PatientDetail.find({
+      patient: patientId,
+    });
+
+    if (!patientDetails) {
+      res.status(404).json({
+        message: "No patient details found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Fetched patient details sucessfully",
+      patientDetails,
+    });
+  } catch (error) {
+    console.log("error in doctor controller at get patient details", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
