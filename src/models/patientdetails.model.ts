@@ -7,7 +7,7 @@ export interface PatientDetails extends Document {
   doctor: mongoose.Types.ObjectId;
   Disease: string;
   symptom: string;
-  patientFeedback: string;
+  patientExperience : string;
   medicationPrescribed: string;
   createdOn: Date;
 }
@@ -22,7 +22,7 @@ const PatientDetailsSchema: Schema<PatientDetails> = new Schema({
   },
   Disease: { type: String, required: true },
   symptom: { type: String, required: true },
-  patientFeedback: { type: String, required: true },
+  patientExperience: { type: String, required: true },
   medicationPrescribed: { type: String, required: true },
   createdOn: { type: Date, default: () => new Date() },
 });

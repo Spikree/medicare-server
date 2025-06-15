@@ -172,11 +172,12 @@ export const addPatientDetails = async (
     });
     return;
   }
-  const { Disease, symptom, patientFeedback, medicationPrescribed } = req.body;
+  const { Disease, symptom, patientExperience, medicationPrescribed } =
+    req.body;
   const { patientId } = req.params;
   const currentUser = req.user;
 
-  if (!Disease || !symptom || !patientFeedback || !medicationPrescribed) {
+  if (!Disease || !symptom || !patientExperience || !medicationPrescribed) {
     res.status(400).json({
       message: "Please fill in the required fields",
     });
@@ -205,7 +206,7 @@ export const addPatientDetails = async (
       doctor: currentUser?.id,
       Disease: Disease,
       symptom: symptom,
-      patientFeedback: patientFeedback,
+      patientExperience: patientExperience,
       medicationPrescribed: medicationPrescribed,
     });
 
@@ -272,16 +273,16 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
     return;
   }
 
-  console.log(patientId)
+  console.log(patientId);
 
   try {
     const patientLabResults = await patientLabResult.find({
-      patient: patientId
+      patient: patientId,
     });
 
-    if(!patientLabResults) {
+    if (!patientLabResults) {
       res.status(404).json({
-        message:"Patient lab results not found"
+        message: "Patient lab results not found",
       });
 
       return;
@@ -289,9 +290,8 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
 
     res.status(200).json({
       message: "Fetched patient lab results sucessfully",
-      patientLabResults
-    })
-
+      patientLabResults,
+    });
   } catch (error) {
     console.log("error in doctor controller at get patient lab results", error);
     res.status(500).json({
