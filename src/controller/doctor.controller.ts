@@ -5,6 +5,7 @@ import PatientList from "../models/patientlist.model";
 import { Request, Response } from "express";
 import fs from "fs";
 import PatientDetail from "../models/patientdetails.model";
+import PatientReview from "../models/patientreview.model";
 
 export const addNewPatient = async (
   req: Request,
@@ -218,6 +219,94 @@ export const addPatientDetails = async (
     });
   } catch (error) {
     console.log("error in doctor controller at add patient details", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const addPatientReview = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { patientDetailId } = req.params;
+  const currentUser = req.user;
+
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
+
+  const { patientReview, sideEffects } = req.body;
+
+  if (!patientDetailId) {
+    res.status(400).json({
+      message: "Please provide patient details id",
+    });
+    return;
+  }
+
+  try {
+    const patientDetails = await PatientDetail.findById(patientDetailId);
+
+    const newPatientReview = new PatientReview({
+      name: patientDetails?.name,
+      patient: patientDetails?.patient,
+      doctor: currentUser?._id,
+      patientDetail: patientDetailId,
+      patientReview: patientReview,
+      sideEffects: sideEffects,
+    });
+
+    await newPatientReview.save();
+
+    res.status(200).json({
+      message: "Added new patient review",
+      newPatientReview,
+    });
+  } catch (error) {
+    console.log("error in doctor controller at add Patient Review", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getPatientReview = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { patientDetailId } = req.params;
+
+  if (!patientDetailId) {
+    res.status(400).json({
+      message: "Please provide patient details id",
+    });
+    return;
+  }
+
+  try {
+    const patientReview = await PatientReview.find({
+      patientDetail: patientDetailId,
+    });
+
+    if (!patientReview) {
+      res.status(404).json({
+        message: "No review found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Fetched all patient reviews sucessfully",
+      patientReview,
+    });
+  } catch (error) {
+    console.log("error in doctor controller at get patient reviews", error);
     res.status(500).json({
       message: "Internal server error",
     });
