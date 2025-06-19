@@ -4,6 +4,7 @@ import patientLabResult from "../models/labresults.model";
 import cloudinary from "../lib/cloudinary";
 import fs from "fs";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
+import PatientDetail from "../models/patientdetails.model";
 
 export const getDoctorList = async (
   req: Request,
@@ -154,6 +155,37 @@ export const getLabResults = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log("error in patient controller at get lab results", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getPatientDetails = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const currentUser = req.user;
+
+  try {
+    const patientDetails = await PatientDetail.find({
+      patient: currentUser?._id,
+    });
+
+    if (!patientDetails) {
+      res.status(404).json({
+        message: "No details on this patient found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Patient details fetched sucessfully",
+      patientDetails
+    });
+  } catch (error) {
+    console.log("error in patient controller at get patient details", error);
     res.status(500).json({
       message: "Internal server error",
     });

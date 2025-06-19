@@ -5,6 +5,7 @@ import {
   addAllergiesAndHealthinfo,
   getDoctorList,
   getLabResults,
+  getPatientDetails,
   uploadLabResults,
 } from "../controller/patient.controller";
 import upload from "../middleware/multer.middleware";
@@ -27,5 +28,6 @@ router.post(
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
+router.get("/getPatientDetails", verifyToken, checkPatientRole,getPatientDetails);
 
 export default router;
