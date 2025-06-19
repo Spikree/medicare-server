@@ -19,6 +19,7 @@ router.post("/addPatient", verifyToken, checkDoctorRole, addNewPatient);
 router.post(
   "/uploadLabResults/:patientId",
   verifyToken,
+  checkDoctorRole,
   upload.single("labFile"),
   uploadLabResults
 );
