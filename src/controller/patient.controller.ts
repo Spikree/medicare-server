@@ -3,6 +3,7 @@ import PatientList from "../models/patientlist.model";
 import patientLabResult from "../models/labresults.model";
 import cloudinary from "../lib/cloudinary";
 import fs from "fs";
+import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 
 export const getDoctorList = async (
   req: Request,
@@ -77,6 +78,51 @@ export const uploadLabResults = async (
     });
   } catch (error: unknown) {
     console.log("error in patient controller at upload lab results", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const addAllergiesAndHealthinfo = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
+
+  const currentUser = req.user;
+
+  const {allergies, generalHealthInfo} = req.body;
+
+  if(!allergies && !generalHealthInfo) {
+    res.status(400).json({
+      message: "please fill in the allergies or health info"
+    });
+    return;
+  }
+
+  try {
+    const allergiesAndGeneralHealthInfo = new AllergiesAndGeneralHealthInfo({
+      patient: currentUser?._id,
+      allergies: allergies,
+      generalHealthInfo: generalHealthInfo,
+    });
+
+    await allergiesAndGeneralHealthInfo.save();
+
+    res.status(200).json({
+      message: "saved allergies and general health info",
+      allergiesAndGeneralHealthInfo
+    })
+  } catch (error) {
+    console.log("error in patient controller at upload Allergies And Health info", error);
     res.status(500).json({
       message: "Internal server error",
     });
