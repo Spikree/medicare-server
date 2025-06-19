@@ -8,6 +8,7 @@ import connectDb from "./lib/connectToDb";
 
 import authRouter from "./routes/auth.route"
 import doctorRouter from "./routes/doctor.routes"
+import patientRouter from "./routes/patient.routes"
 
 const app: Application = express();
 app.use(cookieParser());
@@ -15,8 +16,9 @@ app.use(express.json())
 const port = process.env.PORT || 6000;
 connectDb();
 
-app.use("/auth",authRouter )
+app.use("/auth",authRouter );
 app.use("/doctor",doctorRouter);
+app.use("/patient", patientRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Backend is working");
