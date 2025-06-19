@@ -89,7 +89,6 @@ export const addAllergiesAndHealthinfo = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-
   if (!req.body || typeof req.body !== "object") {
     res.status(400).json({
       message: "Invalid request body",
@@ -99,11 +98,11 @@ export const addAllergiesAndHealthinfo = async (
 
   const currentUser = req.user;
 
-  const {allergies, generalHealthInfo} = req.body;
+  const { allergies, generalHealthInfo } = req.body;
 
-  if(!allergies && !generalHealthInfo) {
+  if (!allergies && !generalHealthInfo) {
     res.status(400).json({
-      message: "please fill in the allergies or health info"
+      message: "please fill in the allergies or health info",
     });
     return;
   }
@@ -119,10 +118,42 @@ export const addAllergiesAndHealthinfo = async (
 
     res.status(200).json({
       message: "saved allergies and general health info",
-      allergiesAndGeneralHealthInfo
-    })
+      allergiesAndGeneralHealthInfo,
+    });
   } catch (error) {
-    console.log("error in patient controller at upload Allergies And Health info", error);
+    console.log(
+      "error in patient controller at upload Allergies And Health info",
+      error
+    );
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getLabResults = async (req: Request, res: Response) => {
+  const currentUser = req.user;
+
+  try {
+    const patientLabResults = await patientLabResult.find({
+      patient: currentUser?._id,
+    });
+
+    if (!patientLabResults) {
+      res.status(404).json({
+        message: "Patient lab results not found",
+      });
+
+      return;
+    }
+
+    res.status(200).json({
+      message: "Fetched patient lab results sucessfully",
+      patientLabResults,
+    });
+  } catch (error) {
+    console.log("error in patient controller at get lab results", error);
     res.status(500).json({
       message: "Internal server error",
     });

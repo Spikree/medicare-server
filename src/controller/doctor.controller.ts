@@ -362,8 +362,6 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
     return;
   }
 
-  console.log(patientId);
-
   try {
     const patientLabResults = await patientLabResult.find({
       patient: patientId,
