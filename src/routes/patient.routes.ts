@@ -3,6 +3,7 @@ import verifyToken from "../middleware/verifytoken.middleware";
 import checkPatientRole from "../middleware/checkpatient.middleware";
 import {
   addAllergiesAndHealthinfo,
+  addPatientReview,
   getDoctorList,
   getLabResults,
   getPatientDetails,
@@ -25,6 +26,7 @@ router.post(
   checkPatientRole,
   addAllergiesAndHealthinfo
 );
+router.post("/reviewOnMedication/:patientDetailId", verifyToken, checkPatientRole,addPatientReview);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);

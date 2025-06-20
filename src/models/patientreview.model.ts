@@ -18,7 +18,7 @@ const PatientReviewSchema: Schema<PatientReviews> = new Schema({
     ref: "User",
     required: true,
   },
-  doctor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  doctor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   patientDetail: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PatientDetail",

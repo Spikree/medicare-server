@@ -5,6 +5,7 @@ import cloudinary from "../lib/cloudinary";
 import fs from "fs";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 import PatientDetail from "../models/patientdetails.model";
+import PatientReview from "../models/patientreview.model";
 
 export const getDoctorList = async (
   req: Request,
@@ -182,10 +183,58 @@ export const getPatientDetails = async (
 
     res.status(200).json({
       message: "Patient details fetched sucessfully",
-      patientDetails
+      patientDetails,
     });
   } catch (error) {
     console.log("error in patient controller at get patient details", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const addPatientReview = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { patientDetailId } = req.params;
+
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
+
+  const { patientReview, sideEffects } = req.body;
+
+  if (!patientDetailId) {
+    res.status(400).json({
+      message: "Please provide patient details id",
+    });
+    return;
+  }
+
+  try {
+    const patientDetails = await PatientDetail.findById(patientDetailId);
+
+    const newPatientReview = new PatientReview({
+      name: patientDetails?.name,
+      patient: patientDetails?.patient,
+      patientDetail: patientDetailId,
+      patientReview: patientReview,
+      sideEffects: sideEffects,
+    });
+
+    await newPatientReview.save();
+
+    res.status(200).json({
+      message: "Added new patient review",
+      newPatientReview,
+    });
+  } catch (error) {
+    console.log("error in patient controller at add Patient Review", error);
     res.status(500).json({
       message: "Internal server error",
     });
