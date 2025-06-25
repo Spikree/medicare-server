@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { Express, Application, Request, Response } from "express";
+import cors from "cors"
 import cookieParser from "cookie-parser";
 
 import connectDb from "./lib/connectToDb";
@@ -14,6 +15,7 @@ const app: Application = express();
 app.use(cookieParser());
 app.use(express.json())
 const port = process.env.PORT || 6000;
+app.use(cors({origin: "http://localhost:5173", credentials: true}));
 connectDb();
 
 app.use("/auth",authRouter );
