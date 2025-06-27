@@ -387,3 +387,51 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
     return;
   }
 };
+
+export const searchPatients = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
+  const { patientName, patientEmail } = req.body;
+
+  if (!patientEmail && !patientName) {
+    res.status(400).json({
+      message: "Please enter at least patient email or patient name",
+    });
+  }
+
+  let orCondition = [];
+
+  try {
+    if (patientName) {
+      orCondition.push({ name: { $regex: patientName, $options: "i" } });
+    }
+
+    if (patientEmail) {
+      orCondition.push({ email: { $regex: patientEmail, $options: "i" } });
+    }
+
+    const query = orCondition.length > 0 ? { $or: orCondition } : {};
+    const patients = await User.find(query).select("-password").lean();
+
+    res.status(200).json({
+      patients,
+      message: "fetched patients sucessfully",
+    });
+  } catch (error) {
+    console.log(
+      "error in doctor controller at search patients lab results",
+      error
+    );
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
