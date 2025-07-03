@@ -20,22 +20,20 @@ export const addNewPatient = async (
     }
 
     const currentUser = req.user;
-    const { name, email } = req.body;
+    const { patientId } = req.body;
 
-    if (!name && !email) {
+    if(!patientId) {
       res.status(400).json({
-        message: "Enter patient name or email",
+        message: "Please provide a patient id"
       });
       return;
     }
 
-    const patient = (await User.findOne({
-      $or: [{ email }, { name: new RegExp(`^${name}$`, "i") }],
-    })) as UserType;
+    const patient = await User.findById(patientId) as UserType | null;
 
     if (!patient) {
       res.status(404).json({
-        message: "No patient with this name or email found",
+        message: "Patient not found",
       });
       return;
     }
@@ -330,7 +328,7 @@ export const getPatientDetails = async (
   try {
     const patientDetails = await PatientDetail.find({
       patient: patientId,
-    });
+    }).sort({ createdOn: -1 });
 
     if (!patientDetails) {
       res.status(404).json({
@@ -400,12 +398,6 @@ export const searchPatients = async (
   }
   const { patientName, patientEmail } = req.body;
 
-  if (!patientEmail && !patientName) {
-    res.status(400).json({
-      message: "Please enter at least patient email or patient name",
-    });
-  }
-
   let orCondition = [];
 
   try {
@@ -417,7 +409,11 @@ export const searchPatients = async (
       orCondition.push({ email: { $regex: patientEmail, $options: "i" } });
     }
 
-    const query = orCondition.length > 0 ? { $or: orCondition } : {};
+    const query =
+      orCondition.length > 0
+        ? { $and: [{ role: "patient" }, { $or: orCondition }] }
+        : { role: "patient" };
+
     const patients = await User.find(query).select("-password").lean();
 
     res.status(200).json({
