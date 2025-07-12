@@ -14,7 +14,7 @@ export const getDoctorList = async (
   const currentUser = req.user;
 
   try {
-    const doctors = await PatientList.find({ patient: currentUser?._id });
+    const doctors = await PatientList.find({ patient: currentUser?._id }).populate("doctor", "name email");
 
     if (!doctors) {
       res.status(404).json({
