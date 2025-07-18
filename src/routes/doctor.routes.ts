@@ -2,6 +2,7 @@ import express from "express";
 import {
   addNewPatient,
   addPatientDetails,
+  addPatientRequest,
   addPatientReview,
   getPatientDetails,
   getPatientLabResults,
@@ -26,11 +27,13 @@ router.post(
 );
 router.post("/addPatientDetails/:patientId", verifyToken, checkDoctorRole,addPatientDetails);
 router.post("/addPatientReview/:patientDetailId", verifyToken,addPatientReview);
+router.post("/searchPatients", verifyToken, checkDoctorRole,searchPatients);
+router.post("/addPatientRequest/:patientId", verifyToken, checkDoctorRole,addPatientRequest);
 
 router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
 router.get("/getPatientDetails/:patientId", verifyToken, checkDoctorRole, getPatientDetails);
 router.get("/getPatientLabResults/:patientId", verifyToken, checkDoctorRole,getPatientLabResults);
 router.get("/getPatientReviews/:patientDetailId", verifyToken, getPatientReview);
-router.post("/searchPatients", verifyToken, checkDoctorRole,searchPatients);
+router.get("/getAllAddRequest", verifyToken,checkDoctorRole,)
 
 export default router;
