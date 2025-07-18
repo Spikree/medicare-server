@@ -7,6 +7,7 @@ import fs from "fs";
 import PatientDetail from "../models/patientdetails.model";
 import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
+import UserModel from "../models/user.model";
 
 export const addNewPatient = async (
   req: Request,
@@ -492,6 +493,47 @@ export const getAllAddRequests = async (
     });
   } catch (error) {
     console.log("error in get all requests in doctor controller" + error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+    return;
+  }
+};
+
+export const acceptAddRequest = async (req: Request, res: Response) => {
+  const { requestId } = req.params;
+  const currentUser = req.user;
+
+  if (!requestId) {
+    res.status(400).json({
+      message: "please provide a request id",
+    });
+    return;
+  }
+
+  try {
+    const request = await RequestModel.findOne({
+      _id: requestId,
+    });
+
+    const patient = await UserModel.findById(request?.sender);
+
+    const newPatient = new PatientList({
+      name: patient?.name,
+      email: patient?.email,
+      bio: patient?.bio,
+      doctor: currentUser?._id,
+      patient: patient?._id,
+    });
+
+    newPatient.save();
+
+    res.status(200).json({
+      message: "Patient added sucessfully",
+      newPatient,
+    });
+  } catch (error) {
+    console.log("error in acceptAddRequest in doctor controller" + error);
     res.status(500).json({
       message: "Internal Server Error",
     });

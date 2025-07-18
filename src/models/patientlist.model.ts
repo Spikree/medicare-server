@@ -27,6 +27,7 @@ const PatientListSchema: Schema<Patientlist> = new Schema({
     type: String,
     required: true,
     enum: ["current", "old"],
+    default: "current",
   },
   createdOn: { type: Date, default: () => new Date() },
 });
