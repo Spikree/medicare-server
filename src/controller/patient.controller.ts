@@ -7,6 +7,7 @@ import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.mode
 import PatientDetail from "../models/patientdetails.model";
 import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
+import UserModel from "../models/user.model";
 
 export const getDoctorList = async (
   req: Request,
@@ -304,6 +305,40 @@ export const getAllAddRequests = async (
     });
   } catch (error) {
     console.log("error in get all requests in patient controller" + error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+    return;
+  }
+};
+
+export const acceptAddRequest = async (req: Request, res: Response) => {
+  const { requestId } = req.params;
+  const currentUser = req.user;
+
+  if (!requestId) {
+    res.status(400).json({
+      message: "please provide a request id",
+    });
+    return;
+  }
+
+  try {
+    const request = await RequestModel.findOne({
+      _id: requestId,
+    });
+
+    const doctor = await UserModel.findById(request?.sender);
+
+    const newPatient = new PatientList({
+      name: currentUser?.name,
+      email: currentUser?.email,
+      bio: currentUser?.bio,
+      doctor: doctor?._id,
+      patient: currentUser?._id,
+    });
+  } catch (error) {
+    console.log("error in acceptAddRequest in patient controller" + error);
     res.status(500).json({
       message: "Internal Server Error",
     });

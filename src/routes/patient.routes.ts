@@ -35,6 +35,7 @@ router.post(
   addPatientReview
 );
 router.post("/addDoctorRequest/:doctorId", verifyToken, checkPatientRole, addDoctorRequest);
+router.post("/acceptAddRequest/:requestId", verifyToken, checkPatientRole, );
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
