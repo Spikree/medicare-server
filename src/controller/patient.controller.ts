@@ -6,6 +6,7 @@ import fs from "fs";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 import PatientDetail from "../models/patientdetails.model";
 import PatientReview from "../models/patientreview.model";
+import RequestModel from "../models/request.model";
 
 export const getDoctorList = async (
   req: Request,
@@ -14,7 +15,9 @@ export const getDoctorList = async (
   const currentUser = req.user;
 
   try {
-    const doctors = await PatientList.find({ patient: currentUser?._id }).populate("doctor", "name email");
+    const doctors = await PatientList.find({
+      patient: currentUser?._id,
+    }).populate("doctor", "name email");
 
     if (!doctors) {
       res.status(404).json({
@@ -237,6 +240,72 @@ export const addPatientReview = async (
     console.log("error in patient controller at add Patient Review", error);
     res.status(500).json({
       message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const addDoctorRequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { doctorId } = req.params;
+  const currentUser = req.user;
+
+  if (!doctorId) {
+    res.status(400).json({
+      message: "Please provide a patient id",
+    });
+    return;
+  }
+
+  try {
+    const newRequest = new RequestModel({
+      sender: currentUser?._id,
+      receiver: doctorId,
+    });
+
+    newRequest.save();
+
+    res.status(200).json({
+      message: "Request sent",
+      newRequest,
+    });
+  } catch (error) {
+    console.log("error in add doctor request in patient controller" + error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+    return;
+  }
+};
+
+export const getAllAddRequests = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const currentUser = req.user;
+
+  try {
+    const requests = await RequestModel.find({
+      receiver: currentUser?._id,
+    });
+
+    if (!requests) {
+      res.status(404).json({
+        message: "No requests found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Fetched all the requests",
+      requests,
+    });
+  } catch (error) {
+    console.log("error in get all requests in patient controller" + error);
+    res.status(500).json({
+      message: "Internal Server Error",
     });
     return;
   }

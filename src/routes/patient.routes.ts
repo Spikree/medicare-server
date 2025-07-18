@@ -4,6 +4,7 @@ import checkPatientRole from "../middleware/checkpatient.middleware";
 import {
   addAllergiesAndHealthinfo,
   addPatientReview,
+  getAllAddRequests,
   getDoctorList,
   getLabResults,
   getPatientDetails,
@@ -26,10 +27,27 @@ router.post(
   checkPatientRole,
   addAllergiesAndHealthinfo
 );
-router.post("/reviewOnMedication/:patientDetailId", verifyToken, checkPatientRole,addPatientReview);
+router.post(
+  "/reviewOnMedication/:patientDetailId",
+  verifyToken,
+  checkPatientRole,
+  addPatientReview
+);
+router.post("/addDoctorRequest/:doctorId", verifyToken, checkPatientRole);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
-router.get("/getPatientDetails", verifyToken, checkPatientRole,getPatientDetails);
+router.get(
+  "/getPatientDetails",
+  verifyToken,
+  checkPatientRole,
+  getPatientDetails
+);
+router.get(
+  "/getAllAddRequests",
+  verifyToken,
+  checkPatientRole,
+  getAllAddRequests
+);
 
 export default router;

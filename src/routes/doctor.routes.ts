@@ -4,6 +4,7 @@ import {
   addPatientDetails,
   addPatientRequest,
   addPatientReview,
+  getAllAddRequests,
   getPatientDetails,
   getPatientLabResults,
   getPatientList,
@@ -34,6 +35,6 @@ router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
 router.get("/getPatientDetails/:patientId", verifyToken, checkDoctorRole, getPatientDetails);
 router.get("/getPatientLabResults/:patientId", verifyToken, checkDoctorRole,getPatientLabResults);
 router.get("/getPatientReviews/:patientDetailId", verifyToken, getPatientReview);
-router.get("/getAllAddRequest", verifyToken,checkDoctorRole,)
+router.get("/getAllAddRequests", verifyToken,checkDoctorRole,getAllAddRequests);
 
 export default router;
