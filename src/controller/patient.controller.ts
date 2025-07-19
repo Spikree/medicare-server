@@ -261,6 +261,17 @@ export const addDoctorRequest = async (
   }
 
   try {
+    const existingRequest = await RequestModel.find({
+      receiver: doctorId,
+      sender: currentUser?._id,
+    });
+
+    if (existingRequest) {
+      res.status(400).json({
+        message: "You have already sent a request to this patient",
+      });
+    }
+
     const newRequest = new RequestModel({
       sender: currentUser?._id,
       receiver: doctorId,
@@ -290,7 +301,9 @@ export const getAllAddRequests = async (
   try {
     const requests = await RequestModel.find({
       receiver: currentUser?._id,
-    });
+    })
+      .populate("sender", "name email profilePicture")
+      .populate("receiver", "name email profilePicture");
 
     if (!requests) {
       res.status(404).json({
@@ -336,6 +349,13 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
       bio: currentUser?.bio,
       doctor: doctor?._id,
       patient: currentUser?._id,
+    });
+
+    newPatient.save();
+
+    res.status(200).json({
+      message: "New patient added",
+      newPatient,
     });
   } catch (error) {
     console.log("error in acceptAddRequest in patient controller" + error);

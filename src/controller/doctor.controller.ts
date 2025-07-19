@@ -449,6 +449,17 @@ export const addPatientRequest = async (
   }
 
   try {
+    const existingRequest = await RequestModel.find({
+      receiver: patientId,
+      sender: currentUser?._id,
+    });
+
+    if (existingRequest) {
+      res.status(400).json({
+        message: "You have already sent a request to this patient",
+      });
+    }
+
     const newRequest = new RequestModel({
       sender: currentUser?._id,
       receiver: patientId,
