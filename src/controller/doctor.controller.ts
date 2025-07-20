@@ -449,7 +449,20 @@ export const addPatientRequest = async (
   }
 
   try {
-    const existingRequest = await RequestModel.find({
+
+    const alreadyInPatientList = await PatientList.findOne({
+      patient: patientId,
+      doctor: currentUser?._id
+    })
+
+    if(alreadyInPatientList) {
+      res.status(400).json({
+        message: "This patient is already in your patient list"
+      });
+      return;
+    }
+
+    const existingRequest = await RequestModel.findOne({
       receiver: patientId,
       sender: currentUser?._id,
     });
@@ -458,6 +471,7 @@ export const addPatientRequest = async (
       res.status(400).json({
         message: "You have already sent a request to this patient",
       });
+      return;
     }
 
     const newRequest = new RequestModel({
@@ -489,7 +503,9 @@ export const getAllAddRequests = async (
   try {
     const requests = await RequestModel.find({
       receiver: currentUser?._id,
-    });
+    })
+      .populate("receiver", "name email profilePicture")
+      .populate("sender", "name email profilePicture");
 
     if (!requests) {
       res.status(404).json({
@@ -537,7 +553,9 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
       patient: patient?._id,
     });
 
-    newPatient.save();
+    await newPatient.save();
+
+    await request?.deleteOne();
 
     res.status(200).json({
       message: "Patient added sucessfully",

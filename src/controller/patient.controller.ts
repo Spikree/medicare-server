@@ -261,15 +261,31 @@ export const addDoctorRequest = async (
   }
 
   try {
-    const existingRequest = await RequestModel.find({
+
+    const alreadyInPatientList = await PatientList.findOne({
+      patient: currentUser?._id,
+      doctor: doctorId
+    })
+
+    if(alreadyInPatientList) {
+      res.status(400).json({
+        message: "This doctor is already in your doctor list"
+      });
+      return;
+    }
+
+    const existingRequest = await RequestModel.findOne({
       receiver: doctorId,
       sender: currentUser?._id,
     });
+
+    console.log(existingRequest);
 
     if (existingRequest) {
       res.status(400).json({
         message: "You have already sent a request to this patient",
       });
+      return;
     }
 
     const newRequest = new RequestModel({
