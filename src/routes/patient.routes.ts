@@ -2,6 +2,7 @@ import express from "express";
 import verifyToken from "../middleware/verifytoken.middleware";
 import checkPatientRole from "../middleware/checkpatient.middleware";
 import {
+  acceptAddRequest,
   addAllergiesAndHealthinfo,
   addDoctorRequest,
   addPatientReview,
@@ -9,9 +10,11 @@ import {
   getDoctorList,
   getLabResults,
   getPatientDetails,
+  searchDoctors,
   uploadLabResults,
 } from "../controller/patient.controller";
 import upload from "../middleware/multer.middleware";
+import { searchPatients } from "../controller/doctor.controller";
 
 const router = express.Router();
 
@@ -35,7 +38,8 @@ router.post(
   addPatientReview
 );
 router.post("/addDoctorRequest/:doctorId", verifyToken, checkPatientRole, addDoctorRequest);
-router.post("/acceptAddRequest/:requestId", verifyToken, checkPatientRole, );
+router.post("/acceptAddRequest/:requestId", verifyToken, checkPatientRole,acceptAddRequest );
+router.post("/searchDoctors", verifyToken,checkPatientRole, searchDoctors);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);

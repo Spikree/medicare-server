@@ -351,7 +351,9 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
       patient: currentUser?._id,
     });
 
-    newPatient.save();
+    await newPatient.save();
+
+    await request?.deleteOne();
 
     res.status(200).json({
       message: "New patient added",
@@ -361,6 +363,52 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     console.log("error in acceptAddRequest in patient controller" + error);
     res.status(500).json({
       message: "Internal Server Error",
+    });
+    return;
+  }
+};
+
+export const searchDoctors = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
+  const { doctorName, doctorEmail } = req.body;
+
+  let orCondition = [];
+
+  try {
+    if (doctorName) {
+      orCondition.push({ name: { $regex: doctorName, $options: "i" } });
+    }
+
+    if (doctorEmail) {
+      orCondition.push({ email: { $regex: doctorEmail, $options: "i" } });
+    }
+
+    const query =
+      orCondition.length > 0
+        ? { $and: [{ role: "doctor" }, { $or: orCondition }] }
+        : { role: "doctor" };
+
+    const doctors = await UserModel.find(query).select("-password").lean();
+
+    res.status(200).json({
+      doctors,
+      message: "fetched patients sucessfully",
+    });
+  } catch (error) {
+    console.log(
+      "error in doctor controller at search patients lab results",
+      error
+    );
+    res.status(500).json({
+      message: "Internal server error",
     });
     return;
   }
