@@ -279,7 +279,6 @@ export const addDoctorRequest = async (
       sender: currentUser?._id,
     });
 
-    console.log(existingRequest);
 
     if (existingRequest) {
       res.status(400).json({

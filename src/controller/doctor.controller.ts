@@ -240,7 +240,7 @@ export const addPatientReview = async (
     return;
   }
 
-  const { patientReview, sideEffects } = req.body;
+  const { patientReview, sideEffects, reviewBy } = req.body;
 
   if (!patientDetailId) {
     res.status(400).json({
@@ -258,6 +258,7 @@ export const addPatientReview = async (
       doctor: currentUser?._id,
       patientDetail: patientDetailId,
       patientReview: patientReview,
+      reviewBy: reviewBy,
       sideEffects: sideEffects,
     });
 
@@ -292,7 +293,7 @@ export const getPatientReview = async (
   try {
     const patientReview = await PatientReview.find({
       patientDetail: patientDetailId,
-    });
+    }).populate("doctor", "name email");
 
     if (!patientReview) {
       res.status(404).json({
@@ -449,15 +450,14 @@ export const addPatientRequest = async (
   }
 
   try {
-
     const alreadyInPatientList = await PatientList.findOne({
       patient: patientId,
-      doctor: currentUser?._id
-    })
+      doctor: currentUser?._id,
+    });
 
-    if(alreadyInPatientList) {
+    if (alreadyInPatientList) {
       res.status(400).json({
-        message: "This patient is already in your patient list"
+        message: "This patient is already in your patient list",
       });
       return;
     }

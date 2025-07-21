@@ -8,6 +8,7 @@ export interface PatientReviews extends Document {
   patientDetail: mongoose.Types.ObjectId;
   patientReview: string;
   sideEffects: string;
+  reviewBy: string;
   createdOn: Date;
 }
 
@@ -26,6 +27,7 @@ const PatientReviewSchema: Schema<PatientReviews> = new Schema({
   },
   patientReview: { type: String, required: true },
   sideEffects: { type: String },
+  reviewBy: { type: String, required: true, enum: ["doctor", "patient"] },
   createdOn: { type: Date, default: () => new Date() },
 });
 
