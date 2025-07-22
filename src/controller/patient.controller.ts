@@ -261,15 +261,14 @@ export const addDoctorRequest = async (
   }
 
   try {
-
     const alreadyInPatientList = await PatientList.findOne({
       patient: currentUser?._id,
-      doctor: doctorId
-    })
+      doctor: doctorId,
+    });
 
-    if(alreadyInPatientList) {
+    if (alreadyInPatientList) {
       res.status(400).json({
-        message: "This doctor is already in your doctor list"
+        message: "This doctor is already in your doctor list",
       });
       return;
     }
@@ -279,10 +278,14 @@ export const addDoctorRequest = async (
       sender: currentUser?._id,
     });
 
+    const existingRequest2 = await RequestModel.findOne({
+      receiver: currentUser?._id,
+      sender: doctorId,
+    });
 
-    if (existingRequest) {
+    if (existingRequest || existingRequest2) {
       res.status(400).json({
-        message: "You have already sent a request to this patient",
+        message: "Either this user has sent you a request or you have already sent one request",
       });
       return;
     }

@@ -293,7 +293,9 @@ export const getPatientReview = async (
   try {
     const patientReview = await PatientReview.find({
       patientDetail: patientDetailId,
-    }).populate("doctor", "name email");
+    })
+      .populate("doctor", "name email")
+      .populate("patient", "name email");
 
     if (!patientReview) {
       res.status(404).json({
@@ -467,9 +469,15 @@ export const addPatientRequest = async (
       sender: currentUser?._id,
     });
 
-    if (existingRequest) {
+    const existingRequest2 = await RequestModel.findOne({
+      receiver: currentUser?._id,
+      sender: patientId,
+    });
+
+    if (existingRequest || existingRequest2) {
       res.status(400).json({
-        message: "You have already sent a request to this patient",
+        message:
+          "Either this user has sent you a request or you have already sent one request",
       });
       return;
     }
