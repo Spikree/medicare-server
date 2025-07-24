@@ -285,7 +285,8 @@ export const addDoctorRequest = async (
 
     if (existingRequest || existingRequest2) {
       res.status(400).json({
-        message: "Either this user has sent you a request or you have already sent one request",
+        message:
+          "Either this user has sent you a request or you have already sent one request",
       });
       return;
     }
@@ -421,10 +422,45 @@ export const searchDoctors = async (
       message: "fetched patients sucessfully",
     });
   } catch (error) {
-    console.log(
-      "error in doctor controller at search patients lab results",
-      error
-    );
+    console.log("error in patient controller at search doctors", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getDoctorDetails = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { doctorId } = req.params;
+
+  if (!doctorId) {
+    res.status(400).json({
+      message: "doctor id isnt provided",
+    });
+    return;
+  }
+
+  try {
+    const doctorDetails = await PatientDetail.find({
+      doctor: doctorId,
+    }).sort({ createdOn: -1 }).populate("doctor", "name email");
+
+    if (!doctorDetails) {
+      res.status(404).json({
+        message: "Doctor details not founds",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      doctorDetails,
+      message: "Doctor details fetched sucessfully",
+    });
+  } catch (error) {
+    console.log("error in patient controller at get doctor details", error);
     res.status(500).json({
       message: "Internal server error",
     });

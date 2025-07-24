@@ -7,6 +7,7 @@ import {
   addDoctorRequest,
   addPatientReview,
   getAllAddRequests,
+  getDoctorDetails,
   getDoctorList,
   getLabResults,
   getPatientDetails,
@@ -37,12 +38,28 @@ router.post(
   checkPatientRole,
   addPatientReview
 );
-router.post("/addDoctorRequest/:doctorId", verifyToken, checkPatientRole, addDoctorRequest);
-router.post("/acceptAddRequest/:requestId", verifyToken, checkPatientRole,acceptAddRequest );
-router.post("/searchDoctors", verifyToken,checkPatientRole, searchDoctors);
+router.post(
+  "/addDoctorRequest/:doctorId",
+  verifyToken,
+  checkPatientRole,
+  addDoctorRequest
+);
+router.post(
+  "/acceptAddRequest/:requestId",
+  verifyToken,
+  checkPatientRole,
+  acceptAddRequest
+);
+router.post("/searchDoctors", verifyToken, checkPatientRole, searchDoctors);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
+router.get(
+  "/getDoctorDetails/:doctorId",
+  verifyToken,
+  checkPatientRole,
+  getDoctorDetails
+);
 router.get(
   "/getPatientDetails",
   verifyToken,
