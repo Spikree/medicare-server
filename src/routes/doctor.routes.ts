@@ -36,7 +36,7 @@ router.post("/acceptAddRequest/:requestId", verifyToken, checkDoctorRole, accept
 router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
 router.get("/getPatientDetails/:patientId", verifyToken, checkDoctorRole, getPatientDetails);
 router.get("/getPatientLabResults/:patientId", verifyToken, checkDoctorRole,getPatientLabResults);
-router.get("/getPatientReviews/:patientDetailId", verifyToken, getPatientReview);
+router.get("/getPatientReviews/:patientDetailId", verifyToken, checkDoctorRole,getPatientReview);
 router.get("/getAllAddRequests", verifyToken,checkDoctorRole,getAllAddRequests);
 
 export default router;

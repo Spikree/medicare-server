@@ -211,7 +211,7 @@ export const addPatientReview = async (
     return;
   }
 
-  const { patientReview, sideEffects } = req.body;
+  const { patientReview, sideEffects, reviewBy } = req.body;
 
   if (!patientDetailId) {
     res.status(400).json({
@@ -229,6 +229,7 @@ export const addPatientReview = async (
       patientDetail: patientDetailId,
       patientReview: patientReview,
       sideEffects: sideEffects,
+      reviewBy: reviewBy,
     });
 
     await newPatientReview.save();
@@ -446,7 +447,7 @@ export const getDoctorDetails = async (
   try {
     const doctorDetails = await PatientDetail.find({
       doctor: doctorId,
-    }).sort({ createdOn: -1 }).populate("doctor", "name email");
+    }).sort({ createdOn: -1 });
 
     if (!doctorDetails) {
       res.status(404).json({
@@ -461,6 +462,47 @@ export const getDoctorDetails = async (
     });
   } catch (error) {
     console.log("error in patient controller at get doctor details", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getPatientReview = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { patientDetailId } = req.params;
+
+  if (!patientDetailId) {
+    res.status(400).json({
+      message: "patient detail id is missing",
+    });
+    return;
+  }
+
+  try {
+    const patientReviews = await PatientReview.find({
+      patientDetail: patientDetailId,
+    })
+      .populate("doctor", "name email")
+      .populate("patient", "name email");
+
+    if (!patientReviews) {
+      res.status(404).json({
+        message: "Fetched patient reviews",
+        patientReviews,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Fetched patient reviews",
+      patientReviews,
+    });
+  } catch (error) {
+    console.log("error in patient controller at get patient reviews", error);
     res.status(500).json({
       message: "Internal server error",
     });
