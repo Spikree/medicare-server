@@ -8,6 +8,7 @@ import PatientDetail from "../models/patientdetails.model";
 import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
 import UserModel from "../models/user.model";
+import { getCloudinaryPublicId } from "../lib/utils";
 
 export const addNewPatient = async (
   req: Request,
@@ -592,9 +593,26 @@ export const editProfile = async (
   const { bio } = req.body;
 
   try {
+    const user = await UserModel.findById(currentUser?._id);
+
+    if (!user) {
+      res.status(400).json({
+        message: "No user found",
+      });
+      return;
+    }
+    
     let fileLink: string | undefined;
 
     if (req.file?.path) {
+
+      if (user.profilePicture) {
+        const publicId = getCloudinaryPublicId(user.profilePicture);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
+
       const cloudinaryResult = await cloudinary.uploader.upload(
         req.file.path!,
         {
@@ -605,14 +623,7 @@ export const editProfile = async (
       fileLink = cloudinaryResult.secure_url;
     }
 
-    const user = await UserModel.findById(currentUser?._id);
-
-    if (!user) {
-      res.status(400).json({
-        message: "No user found",
-      });
-      return;
-    }
+    
 
     if (bio) user.bio = bio;
     if (fileLink) user.profilePicture = fileLink;

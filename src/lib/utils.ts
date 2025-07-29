@@ -24,3 +24,14 @@ export const generateToken = (user: TokenPayload, res: Response) => {
 
   return token;
 };
+
+export const getCloudinaryPublicId = (url: string): string | null => {
+  try {
+    const parts = url.split('/');
+    const fileName = parts.pop()?.split('.')[0]; 
+    const folder = parts.slice(-1)[0]; 
+    return folder && fileName ? `${folder}/${fileName}` : null;
+  } catch {
+    return null;
+  }
+};
