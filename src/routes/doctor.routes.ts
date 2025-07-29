@@ -5,6 +5,7 @@ import {
   addPatientDetails,
   addPatientRequest,
   addPatientReview,
+  editProfile,
   getAllAddRequests,
   getPatientDetails,
   getPatientLabResults,
@@ -32,6 +33,8 @@ router.post("/addPatientReview/:patientDetailId", verifyToken,addPatientReview);
 router.post("/searchPatients", verifyToken, checkDoctorRole,searchPatients);
 router.post("/addPatientRequest/:patientId", verifyToken, checkDoctorRole,addPatientRequest);
 router.post("/acceptAddRequest/:requestId", verifyToken, checkDoctorRole, acceptAddRequest);
+// TODO : edit profile
+router.post("/editProfile", verifyToken, checkDoctorRole,upload.single("profilePicture"),editProfile);
 
 router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
 router.get("/getPatientDetails/:patientId", verifyToken, checkDoctorRole, getPatientDetails);

@@ -122,7 +122,6 @@ export const uploadLabResults = async (
     res.status(400).json({
       message: "Please provide a patient id",
     });
-
     return;
   }
 
@@ -573,6 +572,61 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     console.log("error in acceptAddRequest in doctor controller" + error);
     res.status(500).json({
       message: "Internal Server Error",
+    });
+    return;
+  }
+};
+
+export const editProfile = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  if (!req.body || typeof req.body !== "object") {
+    res.status(400).json({
+      message: "Invalid request body",
+    });
+    return;
+  }
+
+  const currentUser = req.user;
+  const { bio } = req.body;
+
+  try {
+    let fileLink: string | undefined;
+
+    if (req.file?.path) {
+      const cloudinaryResult = await cloudinary.uploader.upload(
+        req.file.path!,
+        {
+          folder: "profile-picture",
+        }
+      );
+      fs.unlinkSync(req.file.path);
+      fileLink = cloudinaryResult.secure_url;
+    }
+
+    const user = await UserModel.findById(currentUser?._id);
+
+    if (!user) {
+      res.status(400).json({
+        message: "No user found",
+      });
+      return;
+    }
+
+    if (bio) user.bio = bio;
+    if (fileLink) user.profilePicture = fileLink;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "User profile updated",
+      user,
+    });
+  } catch (error) {
+    console.log("error in doctor controller at edit user profile", error);
+    res.status(500).json({
+      message: "Internal server error",
     });
     return;
   }
