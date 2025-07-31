@@ -74,6 +74,7 @@ export const uploadLabResults = async (
       title: title,
       labResult: fileLink,
       patient: currentUser?._id,
+      addedBy: currentUser?._id,
     });
 
     await newPatientLabResult.save();
@@ -503,6 +504,49 @@ export const getPatientReview = async (
     });
   } catch (error) {
     console.log("error in patient controller at get patient reviews", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getLabResultsByDoctor = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { doctorId } = req.params;
+  const currentUser = req.user;
+
+  if (!doctorId) {
+    res.status(400).json({
+      message: "doctor id is missing",
+    });
+    return;
+  }
+
+  try {
+    const labResultsByDoctor = await patientLabResult.find({
+      addedBy: doctorId,
+      patient: currentUser?._id,
+    });
+
+    if (!labResultsByDoctor) {
+      res.status(404).json({
+        message: "No lab results by doctor found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Fetched lab results by doctor sucessfully",
+      labResultsByDoctor,
+    });
+  } catch (error) {
+    console.log(
+      "error in patient controller at get lab results by doctor route",
+      error
+    );
     res.status(500).json({
       message: "Internal server error",
     });

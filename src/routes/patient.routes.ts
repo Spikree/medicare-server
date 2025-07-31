@@ -10,6 +10,7 @@ import {
   getDoctorDetails,
   getDoctorList,
   getLabResults,
+  getLabResultsByDoctor,
   getPatientDetails,
   getPatientReview,
   searchDoctors,
@@ -56,6 +57,7 @@ router.post("/searchDoctors", verifyToken, checkPatientRole, searchDoctors);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
+router.get("/getLabResultsByDoctor/:doctorId", verifyToken, checkPatientRole, getLabResultsByDoctor)
 router.get(
   "/getDoctorDetails/:doctorId",
   verifyToken,

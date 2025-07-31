@@ -5,6 +5,7 @@ export interface patientLabResults extends Document {
   title: string;
   labResult: string;
   patient: mongoose.Types.ObjectId;
+  addedBy: mongoose.Types.ObjectId;
   createdOn: Date;
 }
 
@@ -12,6 +13,11 @@ const patientLabResultsSchema: Schema<patientLabResults> = new Schema({
   title: { type: String, required: true },
   labResult: { type: String },
   patient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  addedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,

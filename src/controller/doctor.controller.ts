@@ -118,6 +118,7 @@ export const uploadLabResults = async (
   }
   const { title } = req.body;
   const { patientId } = req.params;
+  const currentUser = req.user;
 
   if (!patientId) {
     res.status(400).json({
@@ -146,6 +147,7 @@ export const uploadLabResults = async (
       title: title,
       labResult: fileLink,
       patient: patientId,
+      addedBy: currentUser?._id,
     });
 
     await newPatientLabResult.save();
@@ -601,11 +603,10 @@ export const editProfile = async (
       });
       return;
     }
-    
+
     let fileLink: string | undefined;
 
     if (req.file?.path) {
-
       if (user.profilePicture) {
         const publicId = getCloudinaryPublicId(user.profilePicture);
         if (publicId) {
@@ -622,8 +623,6 @@ export const editProfile = async (
       fs.unlinkSync(req.file.path);
       fileLink = cloudinaryResult.secure_url;
     }
-
-    
 
     if (bio) user.bio = bio;
     if (fileLink) user.profilePicture = fileLink;
