@@ -7,6 +7,7 @@ import {
   addDoctorRequest,
   addPatientReview,
   getAllAddRequests,
+  getAllPatientInfo,
   getDoctorDetails,
   getDoctorList,
   getLabResults,
@@ -78,5 +79,12 @@ router.get(
 );
 
 router.get("/getPatientReviews/:patientDetailId", verifyToken, checkPatientRole, getPatientReview);
+
+router.get(
+  "/getAllInfo",
+  verifyToken,
+  checkPatientRole,
+  getAllPatientInfo
+);
 
 export default router;

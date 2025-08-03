@@ -553,3 +553,60 @@ export const getLabResultsByDoctor = async (
     return;
   }
 };
+
+export const getAllPatientInfo = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const currentUser = req.user;
+
+  try {
+    const userInfo = await UserModel.findById(currentUser?._id).select("-password");
+
+    const patientDetails = await PatientDetail.find({
+      patient: currentUser?._id,
+    }).populate("doctor", "name email");
+
+    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({
+      patient: currentUser?._id,
+    });
+
+    const labResults = await patientLabResult.find({
+      patient: currentUser?._id,
+    }).populate("addedBy", "name email");
+
+    const patientReviews = await PatientReview.find({
+      patient: currentUser?._id,
+    }).populate("patientDetail", "Disease symptom medicationPrescribed");
+
+    const doctorList = await PatientList.find({
+      patient: currentUser?._id,
+    }).populate("doctor", "name email bio");
+
+    const allPatientInfo = {
+      userInfo,
+      patientDetails,
+      allergiesAndHealthInfo,
+      labResults,
+      patientReviews,
+      doctorList,
+      summary: {
+        totalMedicalRecords: patientDetails.length,
+        totalLabResults: labResults.length,
+        totalReviews: patientReviews.length,
+        totalDoctors: doctorList.length,
+      }
+    };
+
+    res.status(200).json({
+      message: "All patient information fetched successfully",
+      allPatientInfo,
+    });
+  } catch (error) {
+    console.log("error in patient controller at get all patient info", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
