@@ -9,6 +9,7 @@ import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
 import UserModel from "../models/user.model";
 import { getCloudinaryPublicId } from "../lib/utils";
+import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 
 export const addNewPatient = async (
   req: Request,
@@ -575,6 +576,63 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     console.log("error in acceptAddRequest in doctor controller" + error);
     res.status(500).json({
       message: "Internal Server Error",
+    });
+    return;
+  }
+};
+
+export const getAllPatientInfo = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const {patientId} = req.params;
+
+  try {
+    const userInfo = await UserModel.findById(patientId).select("-password");
+
+    const patientDetails = await PatientDetail.find({
+      patient: patientId
+    }).populate("doctor", "name email");
+
+    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({
+      patient: patientId
+    });
+
+    const labResults = await patientLabResult.find({
+      patient: patientId
+    }).populate("addedBy", "name email");
+
+    const patientReviews = await PatientReview.find({
+      patient: patientId
+    }).populate("patientDetail", "Disease symptom medicationPrescribed");
+
+    const doctorList = await PatientList.find({
+      patient: patientId
+    }).populate("doctor", "name email bio");
+
+    const allPatientInfo = {
+      userInfo,
+      patientDetails,
+      allergiesAndHealthInfo,
+      labResults,
+      patientReviews,
+      doctorList,
+      summary: {
+        totalMedicalRecords: patientDetails.length,
+        totalLabResults: labResults.length,
+        totalReviews: patientReviews.length,
+        totalDoctors: doctorList.length,
+      }
+    };
+
+    res.status(200).json({
+      message: "All patient information fetched successfully",
+      allPatientInfo,
+    });
+  } catch (error) {
+    console.log("error in doctor controller at get all patient info", error);
+    res.status(500).json({
+      message: "Internal server error",
     });
     return;
   }
