@@ -11,7 +11,7 @@ import authRouter from "./routes/auth.route";
 import doctorRouter from "./routes/doctor.routes";
 import patientRouter from "./routes/patient.routes";
 import commonRouter from "./routes/common.routes";
-import { main } from "./lib/AiSummary";
+import geminiRouter from "./routes/gemini.routes";
 
 const app: Application = express();
 app.use(cookieParser());
@@ -25,6 +25,7 @@ app.use("/auth", authRouter);
 app.use("/doctor", doctorRouter);
 app.use("/patient", patientRouter);
 app.use("/common", commonRouter);
+app.use("/gemini", geminiRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Backend is working");

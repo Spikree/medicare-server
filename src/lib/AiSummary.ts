@@ -6,7 +6,7 @@ if (!apiKey) {
   throw new Error("GEMINI_API_KEY environment variable not set");
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // Function to generate AI response using Gemini API
 export async function generateAIResponse(patientData: any, query: string): Promise<string> {
