@@ -10,6 +10,8 @@ import RequestModel from "../models/request.model";
 import UserModel from "../models/user.model";
 import { getCloudinaryPublicId } from "../lib/utils";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
+import { generateAIResponse } from "../lib/AiSummary";
+import AiChatHistory from "../models/AiChatHistory.model";
 
 export const addNewPatient = async (
   req: Request,
@@ -585,29 +587,31 @@ export const getAllPatientInfo = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const {patientId} = req.params;
+  const { patientId } = req.params;
 
   try {
     const userInfo = await UserModel.findById(patientId).select("-password");
 
     const patientDetails = await PatientDetail.find({
-      patient: patientId
+      patient: patientId,
     }).populate("doctor", "name email");
 
     const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({
-      patient: patientId
+      patient: patientId,
     });
 
-    const labResults = await patientLabResult.find({
-      patient: patientId
-    }).populate("addedBy", "name email");
+    const labResults = await patientLabResult
+      .find({
+        patient: patientId,
+      })
+      .populate("addedBy", "name email");
 
     const patientReviews = await PatientReview.find({
-      patient: patientId
+      patient: patientId,
     }).populate("patientDetail", "Disease symptom medicationPrescribed");
 
     const doctorList = await PatientList.find({
-      patient: patientId
+      patient: patientId,
     }).populate("doctor", "name email bio");
 
     const allPatientInfo = {
@@ -622,7 +626,7 @@ export const getAllPatientInfo = async (
         totalLabResults: labResults.length,
         totalReviews: patientReviews.length,
         totalDoctors: doctorList.length,
-      }
+      },
     };
 
     res.status(200).json({
@@ -635,5 +639,100 @@ export const getAllPatientInfo = async (
       message: "Internal server error",
     });
     return;
+  }
+};
+
+const patientDataCache: { [patientId: string]: any } = {};
+
+// Route to generate AI summary when doctor opens AI chat for a patient
+export const aiSummary = async (req: Request, res: Response): Promise<void> => {
+  const { patientId } = req.params;
+
+  try {
+    // Fetch patient data from MongoDB
+    const userInfo = await UserModel.findById(patientId).select("-password").lean();
+    if (!userInfo) {
+      res.status(404).json({ error: "Patient not found" });
+      return;
+    }
+
+    const patientDetails = await PatientDetail.find({ patient: patientId })
+      .populate("doctor", "name email")
+      .lean();
+
+    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({ patient: patientId }).lean();
+
+    const labResults = await patientLabResult
+      .find({ patient: patientId })
+      .populate("addedBy", "name email")
+      .lean();
+
+    const patientReviews = await PatientReview.find({ patient: patientId })
+      .populate("patientDetail", "Disease symptom medicationPrescribed")
+      .lean();
+
+    const doctorList = await PatientList.find({ patient: patientId })
+      .populate("doctor", "name email bio")
+      .lean();
+
+    const allPatientInfo = {
+      userInfo,
+      patientDetails,
+      allergiesAndHealthInfo,
+      labResults,
+      patientReviews,
+      doctorList,
+      summary: {
+        totalMedicalRecords: patientDetails.length,
+        totalLabResults: labResults.length,
+        totalReviews: patientReviews.length,
+        totalDoctors: doctorList.length,
+      },
+    };
+
+    const patientData = {
+      message: "All patient information fetched successfully",
+      allPatientInfo,
+    };
+
+    // Store in cache
+    patientDataCache[patientId] = patientData;
+
+    // Generate AI summary
+    const summaryQuery = "Provide a concise medical summary of the patient's history based on the provided data.";
+    const aiResponse = await generateAIResponse(patientData, summaryQuery);
+
+    res.json({ message: "AI summary generated successfully", summary: aiResponse });
+  } catch (error) {
+    console.error("Error in aiSummary:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// and lets create a seperate api for doctor to ask questions 
+export const askPatientQuestion = async (req: Request, res: Response): Promise<void> => {
+  const { patientId } = req.params;
+  const { query } = req.body;
+
+  try {
+    // Check if patient data exists in cache
+    const patientData = patientDataCache[patientId];
+    if (!patientData) {
+      res.status(400).json({ error: "No patient data available. Please initialize patient data first via ai-summary." });
+      return;
+    }
+
+    // Check if query is provided
+    if (!query || typeof query !== "string") {
+      res.status(400).json({ error: "Query is required and must be a string." });
+      return;
+    }
+
+    // Generate AI response
+    const aiResponse = await generateAIResponse(patientData, query);
+    res.json({ response: aiResponse });
+  } catch (error) {
+    console.error("Error in askPatientQuestion:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
