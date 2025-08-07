@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { DOCTOR_APP_SYSTEM_INSTRUCTION } from "./geminiInstructions";
 
 // A single, reusable instance of the Generative AI client
 const apiKey = process.env.GEMINI_API_KEY;
@@ -17,7 +18,7 @@ export async function generateAIResponse(patientData: any, query: string): Promi
       
       Query: ${query}
       
-      Provide a concise and accurate response based on the patient data provided. If the query is a question, answer it directly. If it's a request for a summary, generate a brief medical summary. Ensure the response is professional, suitable for a medical context, and adheres to privacy and ethical standards.
+      ${DOCTOR_APP_SYSTEM_INSTRUCTION}
     `;
 
     // The generateContent call returns a promise, so we await it.

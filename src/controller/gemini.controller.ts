@@ -14,7 +14,9 @@ export const aiSummary = async (req: Request, res: Response): Promise<void> => {
 
   try {
     // Fetch patient data from MongoDB
-    const userInfo = await UserModel.findById(patientId).select("-password").lean();
+    const userInfo = await UserModel.findById(patientId)
+      .select("-password")
+      .lean();
     if (!userInfo) {
       res.status(404).json({ error: "Patient not found" });
       return;
@@ -24,7 +26,9 @@ export const aiSummary = async (req: Request, res: Response): Promise<void> => {
       .populate("doctor", "name email")
       .lean();
 
-    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({ patient: patientId }).lean();
+    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({
+      patient: patientId,
+    }).lean();
 
     const labResults = await patientLabResult
       .find({ patient: patientId })
@@ -60,9 +64,14 @@ export const aiSummary = async (req: Request, res: Response): Promise<void> => {
     };
 
     // Generate AI summary
-    const summaryQuery = "Provide a concise medical summary of the patient's history based on the provided data.";
+    const summaryQuery =
+      "Provide a concise medical summary of the patient's history based on the provided data.";
     const aiResponse = await generateAIResponse(patientData, summaryQuery);
-    if (!aiResponse || typeof aiResponse !== "string" || aiResponse.trim() === "") {
+    if (
+      !aiResponse ||
+      typeof aiResponse !== "string" ||
+      aiResponse.trim() === ""
+    ) {
       res.status(500).json({ error: "AI response is empty or invalid" });
       return;
     }
@@ -71,10 +80,16 @@ export const aiSummary = async (req: Request, res: Response): Promise<void> => {
     if (!chatHistory) {
       chatHistory = new AiChatHistory({ patientId, history: [] });
     }
-    (chatHistory.history as any).push({ role: "model", parts: [{ text: aiResponse }] });
+    (chatHistory.history as any).push({
+      role: "model",
+      parts: [{ text: aiResponse }],
+    });
     await chatHistory.save();
 
-    res.json({ message: "AI summary generated successfully", summary: aiResponse });
+    res.status(200).json({
+      message: "AI summary generated successfully",
+      summary: aiResponse,
+    });
   } catch (error) {
     console.error("Error in aiSummary:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -82,13 +97,18 @@ export const aiSummary = async (req: Request, res: Response): Promise<void> => {
 };
 
 // API for doctor to ask questions
-export const askPatientQuestion = async (req: Request, res: Response): Promise<void> => {
+export const askPatientQuestion = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { patientId } = req.params;
   const { query } = req.body;
 
   try {
     // Fetch patient data from MongoDB (same as aiSummary)
-    const userInfo = await UserModel.findById(patientId).select("-password").lean();
+    const userInfo = await UserModel.findById(patientId)
+      .select("-password")
+      .lean();
     if (!userInfo) {
       res.status(404).json({ error: "Patient not found" });
       return;
@@ -98,7 +118,9 @@ export const askPatientQuestion = async (req: Request, res: Response): Promise<v
       .populate("doctor", "name email")
       .lean();
 
-    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({ patient: patientId }).lean();
+    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({
+      patient: patientId,
+    }).lean();
 
     const labResults = await patientLabResult
       .find({ patient: patientId })
@@ -135,7 +157,9 @@ export const askPatientQuestion = async (req: Request, res: Response): Promise<v
 
     // Check if query is provided
     if (!query || typeof query !== "string") {
-      res.status(400).json({ error: "Query is required and must be a string." });
+      res
+        .status(400)
+        .json({ error: "Query is required and must be a string." });
       return;
     }
 
@@ -144,20 +168,30 @@ export const askPatientQuestion = async (req: Request, res: Response): Promise<v
     if (!chatHistory) {
       chatHistory = new AiChatHistory({ patientId, history: [] });
     }
-    (chatHistory.history as any).push({ role: "user", parts: [{ text: query }] });
+    (chatHistory.history as any).push({
+      role: "user",
+      parts: [{ text: query }],
+    });
     await chatHistory.save();
 
     // Generate AI response
     const aiResponse = await generateAIResponse(patientData, query);
-    if (!aiResponse || typeof aiResponse !== "string" || aiResponse.trim() === "") {
+    if (
+      !aiResponse ||
+      typeof aiResponse !== "string" ||
+      aiResponse.trim() === ""
+    ) {
       res.status(500).json({ error: "AI response is empty or invalid" });
       return;
     }
     // Store the AI response in AiChatHistory
-    (chatHistory.history as any).push({ role: "model", parts: [{ text: aiResponse }] });
+    (chatHistory.history as any).push({
+      role: "model",
+      parts: [{ text: aiResponse }],
+    });
     await chatHistory.save();
 
-    res.json({ response: aiResponse });
+    res.status(200).json({ response: aiResponse });
   } catch (error) {
     console.error("Error in askPatientQuestion:", error);
     res.status(500).json({ error: "Internal server error" });
