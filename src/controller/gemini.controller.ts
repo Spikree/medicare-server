@@ -197,3 +197,38 @@ export const askPatientQuestion = async (
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getAiChatHistory = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { patientId } = req.params;
+
+  if (!patientId) {
+    res.status(400).json({
+      message: "Patient id not provided",
+    });
+    return;
+  }
+
+  try {
+    const aiChatHistory = await AiChatHistory.find({
+      patientId: patientId,
+    });
+
+    if (!aiChatHistory) {
+      res.status(404).json({
+        message: "ai chats for this patient are not available",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      aiChatHistory,
+      message: "fetched ai chats sucessfully",
+    });
+  } catch (error) {
+    console.error("Error in getAiChatHistory:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
