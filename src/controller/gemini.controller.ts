@@ -189,9 +189,9 @@ export const askPatientQuestion = async (
       role: "model",
       parts: [{ text: aiResponse }],
     });
-    await chatHistory.save();
+    const newChatHistory = await chatHistory.save();
 
-    res.status(200).json({ response: aiResponse });
+    res.status(200).json({ newChatHistory });
   } catch (error) {
     console.error("Error in askPatientQuestion:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -212,7 +212,7 @@ export const getAiChatHistory = async (
   }
 
   try {
-    const aiChatHistory = await AiChatHistory.find({
+    const aiChatHistory = await AiChatHistory.findOne({
       patientId: patientId,
     });
 
