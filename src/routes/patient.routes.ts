@@ -14,6 +14,7 @@ import {
   getLabResultsByDoctor,
   getPatientDetails,
   getPatientReview,
+  removeDoctor,
   searchDoctors,
   uploadLabResults,
 } from "../controller/patient.controller";
@@ -55,6 +56,7 @@ router.post(
   acceptAddRequest
 );
 router.post("/searchDoctors", verifyToken, checkPatientRole, searchDoctors);
+router.post("/removeDoctor/:doctorId", verifyToken, checkPatientRole,removeDoctor);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);

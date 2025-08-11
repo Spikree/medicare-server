@@ -561,7 +561,9 @@ export const getAllPatientInfo = async (
   const currentUser = req.user;
 
   try {
-    const userInfo = await UserModel.findById(currentUser?._id).select("-password");
+    const userInfo = await UserModel.findById(currentUser?._id).select(
+      "-password"
+    );
 
     const patientDetails = await PatientDetail.find({
       patient: currentUser?._id,
@@ -571,9 +573,11 @@ export const getAllPatientInfo = async (
       patient: currentUser?._id,
     });
 
-    const labResults = await patientLabResult.find({
-      patient: currentUser?._id,
-    }).populate("addedBy", "name email");
+    const labResults = await patientLabResult
+      .find({
+        patient: currentUser?._id,
+      })
+      .populate("addedBy", "name email");
 
     const patientReviews = await PatientReview.find({
       patient: currentUser?._id,
@@ -595,7 +599,7 @@ export const getAllPatientInfo = async (
         totalLabResults: labResults.length,
         totalReviews: patientReviews.length,
         totalDoctors: doctorList.length,
-      }
+      },
     };
 
     res.status(200).json({
@@ -604,6 +608,38 @@ export const getAllPatientInfo = async (
     });
   } catch (error) {
     console.log("error in patient controller at get all patient info", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const removeDoctor = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { doctorId } = req.params;
+  const currentUser = req.user;
+
+  if (!doctorId) {
+    res.status(400).json({
+      message: "Doctor Id is not provided",
+    });
+    return;
+  }
+
+  try {
+    await PatientList.updateOne(
+      { doctor: doctorId, patient: currentUser?._id },
+      { $set: { patientStatus: "old" } }
+    );
+
+    res.status(200).json({
+      message: "Doctor removed",
+    });
+  } catch (error) {
+    console.log("error in patient controllers at remove doctor", error);
     res.status(500).json({
       message: "Internal server error",
     });
