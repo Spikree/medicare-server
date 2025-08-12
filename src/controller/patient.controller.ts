@@ -646,3 +646,35 @@ export const removeDoctor = async (
     return;
   }
 };
+
+export const assignDoctor = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+    const { doctorId } = req.params;
+  const currentUser = req.user;
+
+  if (!doctorId) {
+    res.status(400).json({
+      message: "Doctor Id is not provided",
+    });
+    return;
+  }
+
+  try {
+    await PatientList.updateOne(
+      { doctor: doctorId, patient: currentUser?._id },
+      { $set: { patientStatus: "current" } }
+    );
+
+    res.status(200).json({
+      message: "Doctor reassigned",
+    });
+  } catch (error) {
+    console.log("error in patient controllers at reassign doctor", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+}

@@ -6,6 +6,7 @@ import {
   addAllergiesAndHealthinfo,
   addDoctorRequest,
   addPatientReview,
+  assignDoctor,
   getAllAddRequests,
   getAllPatientInfo,
   getDoctorDetails,
@@ -57,6 +58,7 @@ router.post(
 );
 router.post("/searchDoctors", verifyToken, checkPatientRole, searchDoctors);
 router.post("/removeDoctor/:doctorId", verifyToken, checkPatientRole,removeDoctor);
+router.post("/reassignDoctor/:doctorId", verifyToken,checkPatientRole, assignDoctor);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
