@@ -10,13 +10,15 @@ const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // Function to generate AI response using Gemini API
-export async function generateAIResponse(patientData: any, query: string): Promise<string> {
+export async function generateAIResponse(patientData: any, todaysChat: any, query: string): Promise<string> {
   try {
     // Prepare the prompt with patient data and query
     const prompt = `
       Patient Data: ${JSON.stringify(patientData.allPatientInfo, null, 2)}
       
       Query: ${query}
+
+      todays chat history : ${todaysChat}
       
       ${DOCTOR_APP_SYSTEM_INSTRUCTION}
     `;

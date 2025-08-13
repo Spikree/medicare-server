@@ -23,7 +23,7 @@ const AiChatHistorySchema : Schema<IAiChatHistory> = new Schema({
     ]
 }, {
     timestamps: true
-})
+});
 
 const AiChatHistory = mongoose.model<IAiChatHistory>("AiChatHistory", AiChatHistorySchema);
 export default AiChatHistory
