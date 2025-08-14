@@ -1,0 +1,28 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const verifytoken_middleware_1 = __importDefault(require("../middleware/verifytoken.middleware"));
+const checkpatient_middleware_1 = __importDefault(require("../middleware/checkpatient.middleware"));
+const patient_controller_1 = require("../controller/patient.controller");
+const multer_middleware_1 = __importDefault(require("../middleware/multer.middleware"));
+const router = express_1.default.Router();
+router.post("/uploadLabResults", verifytoken_middleware_1.default, checkpatient_middleware_1.default, multer_middleware_1.default.single("labFile"), patient_controller_1.uploadLabResults);
+router.post("/uploadAllergiesAndHealthinfo", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.addAllergiesAndHealthinfo);
+router.post("/addPatientReview/:patientDetailId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.addPatientReview);
+router.post("/addDoctorRequest/:doctorId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.addDoctorRequest);
+router.post("/acceptAddRequest/:requestId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.acceptAddRequest);
+router.post("/searchDoctors", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.searchDoctors);
+router.post("/removeDoctor/:doctorId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.removeDoctor);
+router.post("/reassignDoctor/:doctorId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.assignDoctor);
+router.get("/getDoctorList", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getDoctorList);
+router.get("/getLabResults", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getLabResults);
+router.get("/getLabResultsByDoctor/:doctorId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getLabResultsByDoctor);
+router.get("/getDoctorDetails/:doctorId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getDoctorDetails);
+router.get("/getPatientDetails", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getPatientDetails);
+router.get("/getAllAddRequests", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getAllAddRequests);
+router.get("/getPatientReviews/:patientDetailId", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getPatientReview);
+router.get("/getAllInfo", verifytoken_middleware_1.default, checkpatient_middleware_1.default, patient_controller_1.getAllPatientInfo);
+exports.default = router;
