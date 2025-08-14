@@ -17,9 +17,8 @@ const app: Application = express();
 app.use(cookieParser());
 app.use(express.json());
 const port = process.env.PORT || 6000;
-app.use(cors({ origin: "http://localhost:5173, https://medicare-client.onrender.com", credentials: true }));
+app.use(cors({ origin: ["http://localhost:5173, https://medicare-client.onrender.com"], credentials: true }));
 connectDb();
-// main();
 
 app.use("/auth", authRouter);
 app.use("/doctor", doctorRouter);
