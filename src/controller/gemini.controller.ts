@@ -174,17 +174,11 @@ export const askPatientQuestion = async (
     });
     await chatHistory.save();
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const todaysChat = await AiChatHistory.findOne(
+      { patientId: patientId },
+      { history: { $slice: -20 } }
+    );
 
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-
-    const todaysChat = await AiChatHistory.find({
-      patientId: patientId,
-      createdAt: { $gte: todayStart, $lt: todayEnd },
-    });
-    
     // Generate AI response
     const aiResponse = await generateAIResponse(patientData, todaysChat, query);
     if (
