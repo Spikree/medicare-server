@@ -13,7 +13,8 @@ import patientRouter from "./routes/patient.routes";
 import commonRouter from "./routes/common.routes";
 import geminiRouter from "./routes/gemini.routes";
 
-const app: Application = express();
+import { app, server } from "./socket/socket";
+
 app.use(cookieParser());
 app.use(express.json());
 const port = process.env.PORT || 6000;
@@ -30,6 +31,6 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Backend is working");
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`);
 });
