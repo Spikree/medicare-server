@@ -12,6 +12,7 @@ import doctorRouter from "./routes/doctor.routes";
 import patientRouter from "./routes/patient.routes";
 import commonRouter from "./routes/common.routes";
 import geminiRouter from "./routes/gemini.routes";
+import chatRouter from "./routes/chat.route"
 
 import { app, server } from "./socket/socket";
 
@@ -26,6 +27,7 @@ app.use("/doctor", doctorRouter);
 app.use("/patient", patientRouter);
 app.use("/common", commonRouter);
 app.use("/gemini", geminiRouter);
+app.use("/chatRoute", chatRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Backend is working");
