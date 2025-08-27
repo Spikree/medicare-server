@@ -2,6 +2,7 @@ import chatModel from "../models/chat.model";
 import cloudinary from "../lib/cloudinary";
 import { Request, Response } from "express";
 import fs from "fs";
+import User from "../models/user.model";
 
 export const getMessages = async (
   req: Request,
@@ -12,7 +13,7 @@ export const getMessages = async (
   const myId = currentUser?._id;
 
   try {
-    const chatId = [myId, receiverId].sort().join("_");
+    const chatId = [myId?.toString(), receiverId.toString()].sort().join("_");
 
     const messages = await chatModel
       .find({
@@ -22,12 +23,12 @@ export const getMessages = async (
         createdAt: -1,
       });
 
-    if(messages.length === 0) {
-        res.status(200).json({
-            message: "Chat is empty",
-            messages,
-        });
-        return;
+    if (messages.length === 0) {
+      res.status(200).json({
+        message: "Chat is empty",
+        messages,
+      });
+      return;
     }
 
     res.status(200).json({
@@ -60,11 +61,20 @@ export const sendMessage = async (
   }
 
   try {
-    const chatId = [myId, receiverId].sort().join("_");
+    const receiverExists = await User.findById(receiverId);
+
+    if (!receiverExists) {
+      res.status(404).json({
+        message: "User does not exist",
+      });
+      return;
+    }
+
+    const chatId = [myId?.toString(), receiverId.toString()].sort().join("_");
 
     const newMessage = new chatModel({
       senderId: myId,
-      reveiverId: receiverId,
+      receiverId: receiverId,
       text,
       chatId,
     });
@@ -72,8 +82,8 @@ export const sendMessage = async (
     await newMessage.save();
 
     res.status(200).json({
-        message: "message sent sucessfully"
-    })
+      message: "message sent sucessfully",
+    });
   } catch (error) {
     console.log("Error in chat controller at send message" + error);
     res.status(500).json({
