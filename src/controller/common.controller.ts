@@ -65,3 +65,29 @@ export const editProfile = async (
     return;
   }
 };
+
+export const getUserProfile = async (req: Request, res: Response) => {
+  const {id: userId} = req.params;
+
+  try {
+    const user = await UserModel.findById(userId).select("-password").lean();
+
+    if(!user) {
+      res.status(404).json({
+        message: "No user found"
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "user fetched",
+      user
+    })
+  } catch (error) {
+    console.log("error in common controller at get user profile", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};

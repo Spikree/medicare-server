@@ -20,7 +20,7 @@ export const getMessages = async (
         chatId,
       })
       .sort({
-        createdAt: -1,
+        createdAt: 1,
       });
 
     if (messages.length === 0) {
