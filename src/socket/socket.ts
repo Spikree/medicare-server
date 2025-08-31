@@ -68,6 +68,74 @@ io.on("connection", (socket) => {
     activeUsers.add(userId);
     broadcastUserStatus(userId, true);
   });
+
+  socket.on("typing", (data) => {
+    const { senderId, receiverId, chatId } = data;
+
+    const receiverSocket = users.get(receiverId);
+    if (receiverSocket) {
+      receiverSocket.forEach((socketId: string) => {
+        io.to(socketId).emit("userTyping", {
+          senderId,
+          isTyping: true,
+          chatId,
+        });
+      });
+    }
+  });
+
+  socket.on("stopTyping", (data) => {
+    const { senderId, receiverId, chatId } = data;
+
+    const receiverSocket = users.get(receiverId);
+    if (receiverSocket) {
+      receiverSocket.forEach((socketId: string) => {
+        io.to(socketId).emit("userTyping", {
+          senderId,
+          isTyping: false,
+          chatId,
+        });
+      });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    const userId = socket.data.userId;
+
+    if (userId) {
+      const userSockets = users.get(userId);
+
+      if (userSockets) {
+        userSockets.delete(socket.id);
+
+        if (userSockets.size === 0) {
+          users.delete(userId);
+          activeUsers.delete(userId);
+          broadcastUserStatus(userId, false);
+        }
+      }
+    }
+
+    console.log(
+      `User ${userId || "unknown"} disconnected (socket : ${socket.id})`
+    );
+  });
+
+  socket.on("userLogout", (userId) => {
+    if (!userId) return;
+
+    activeUsers.delete(userId);
+
+    if (users.has(userId)) {
+      users.delete(userId);
+    }
+
+    broadcastUserStatus(userId, false);
+
+    socket.disconnect(true);
+
+    console.log(`User ${userId} logged out`);
+  });
 });
 
-export { io, server, app };
+export { io, server, app, users };

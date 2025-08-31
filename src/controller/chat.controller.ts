@@ -3,6 +3,7 @@ import cloudinary from "../lib/cloudinary";
 import { Request, Response } from "express";
 import fs from "fs";
 import User from "../models/user.model";
+import { io, users } from "../socket/socket";
 
 export const getMessages = async (
   req: Request,
@@ -80,6 +81,16 @@ export const sendMessage = async (
     });
 
     await newMessage.save();
+
+    const receiverSocket = users.get(receiverId);
+    if (receiverSocket) {
+      receiverSocket.forEach((socketId: string) => {
+        io.to(socketId).emit("newMessage", {
+          ...newMessage.toObject(),
+          chatId,
+        });
+      });
+    }
 
     res.status(200).json({
       message: "message sent sucessfully",
