@@ -54,13 +54,6 @@ export const sendMessage = async (
   const currentUser = req.user;
   const myId = currentUser?._id;
 
-  if (!text) {
-    res.status(400).json({
-      message: "Text or image is required",
-    });
-    return;
-  }
-
   try {
     const receiverExists = await User.findById(receiverId);
 
@@ -72,6 +65,24 @@ export const sendMessage = async (
     }
 
     const chatId = [myId?.toString(), receiverId.toString()].sort().join("_");
+    let imageUrl = null;
+
+    if (req.file) {
+      const fileLink = await cloudinary.uploader.upload(req.file.path, {
+        folder: "message",
+      });
+
+      fs.unlinkSync(req.file.path);
+
+      imageUrl = fileLink.secure_url;
+    }
+
+    if (imageUrl === null && !text) {
+      res.status(400).json({
+        message: "No text or image provided",
+      });
+      return;
+    }
 
     const newMessage = new chatModel({
       senderId: myId,
