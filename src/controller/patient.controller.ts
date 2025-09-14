@@ -8,6 +8,7 @@ import PatientDetail from "../models/patientdetails.model";
 import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
 import UserModel from "../models/user.model";
+import { decryptString } from "../lib/crypto";
 
 export const getDoctorList = async (
   req: Request,
@@ -446,16 +447,24 @@ export const getDoctorDetails = async (
   }
 
   try {
-    const doctorDetails = await PatientDetail.find({
+    const doctorDetailsEncrypted = await PatientDetail.find({
       doctor: doctorId,
     }).sort({ createdOn: -1 });
 
-    if (!doctorDetails) {
+    if (!doctorDetailsEncrypted) {
       res.status(404).json({
         message: "Doctor details not founds",
       });
       return;
     }
+
+    const doctorDetails = doctorDetailsEncrypted.map((detail) => ({
+      ...detail,
+      Disease: decryptString(detail.Disease),
+      symptom: decryptString(detail.symptom),
+      patientExperience: decryptString(detail.patientExperience),
+      medicationPrescribed: decryptString(detail.medicationPrescribed),
+    }));
 
     res.status(200).json({
       doctorDetails,
@@ -651,7 +660,7 @@ export const assignDoctor = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-    const { doctorId } = req.params;
+  const { doctorId } = req.params;
   const currentUser = req.user;
 
   if (!doctorId) {
@@ -677,4 +686,4 @@ export const assignDoctor = async (
     });
     return;
   }
-}
+};

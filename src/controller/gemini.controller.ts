@@ -7,6 +7,7 @@ import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.mode
 import { generateAIResponse } from "../lib/AiSummary";
 import AiChatHistory from "../models/AiChatHistory.model";
 import { Request, Response } from "express";
+import { decryptString } from "../lib/crypto";
 
 // // Route to generate AI summary when doctor opens AI chat for a patient
 // export const aiSummary = async (req: Request, res: Response): Promise<void> => {
@@ -114,9 +115,19 @@ export const askPatientQuestion = async (
       return;
     }
 
-    const patientDetails = await PatientDetail.find({ patient: patientId })
+    const patientDetailsEncrypted = await PatientDetail.find({
+      patient: patientId,
+    })
       .populate("doctor", "name email")
       .lean();
+
+    const patientDetails = patientDetailsEncrypted.map((detail) => ({
+      ...detail,
+      Disease: decryptString(detail.Disease),
+      symptom: decryptString(detail.symptom),
+      patientExperience: decryptString(detail.patientExperience),
+      medicationPrescribed: decryptString(detail.medicationPrescribed),
+    }));
 
     const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({
       patient: patientId,

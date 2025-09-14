@@ -339,7 +339,7 @@ export const getPatientDetails = async (
   try {
     const patientDetailsEncrypted = await PatientDetail.find({
       patient: patientId,
-    }).sort({ createdOn: -1 })
+    }).sort({ createdOn: -1 });
 
     if (!patientDetailsEncrypted) {
       res.status(404).json({
@@ -349,12 +349,12 @@ export const getPatientDetails = async (
     }
 
     const patientDetails = patientDetailsEncrypted.map((detail) => ({
-  ...detail,
-  Disease: decryptString(detail.Disease),
-  symptom: decryptString(detail.symptom),
-  patientExperience: decryptString(detail.patientExperience),
-  medicationPrescribed: decryptString(detail.medicationPrescribed),
-}));
+      ...detail,
+      Disease: decryptString(detail.Disease),
+      symptom: decryptString(detail.symptom),
+      patientExperience: decryptString(detail.patientExperience),
+      medicationPrescribed: decryptString(detail.medicationPrescribed),
+    }));
 
     res.status(200).json({
       message: "Fetched patient details sucessfully",
