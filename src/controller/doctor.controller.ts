@@ -8,7 +8,7 @@ import PatientDetail from "../models/patientdetails.model";
 import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
 import UserModel from "../models/user.model";
-import { encrypt, decrypt } from "../lib/crypto";
+import { encryptString, decryptString } from "../lib/crypto";
 import { getCloudinaryPublicId } from "../lib/utils";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 import { generateAIResponse } from "../lib/AiSummary";
@@ -211,10 +211,10 @@ export const addPatientDetails = async (
       name: patient?.name,
       patient: patientId,
       doctor: currentUser?.id,
-      Disease: Disease,
-      symptom: symptom,
-      patientExperience: patientExperience,
-      medicationPrescribed: medicationPrescribed,
+      Disease: encryptString(Disease),
+      symptom: encryptString(symptom),
+      patientExperience: encryptString(patientExperience),
+      medicationPrescribed: encryptString(medicationPrescribed),
     });
 
     await patientDetail.save();
@@ -337,16 +337,24 @@ export const getPatientDetails = async (
   }
 
   try {
-    const patientDetails = await PatientDetail.find({
+    const patientDetailsEncrypted = await PatientDetail.find({
       patient: patientId,
-    }).sort({ createdOn: -1 });
+    }).sort({ createdOn: -1 })
 
-    if (!patientDetails) {
+    if (!patientDetailsEncrypted) {
       res.status(404).json({
         message: "No patient details found",
       });
       return;
     }
+
+    const patientDetails = patientDetailsEncrypted.map((detail) => ({
+  ...detail,
+  Disease: decryptString(detail.Disease),
+  symptom: decryptString(detail.symptom),
+  patientExperience: decryptString(detail.patientExperience),
+  medicationPrescribed: decryptString(detail.medicationPrescribed),
+}));
 
     res.status(200).json({
       message: "Fetched patient details sucessfully",
