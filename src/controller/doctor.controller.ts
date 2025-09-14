@@ -8,6 +8,7 @@ import PatientDetail from "../models/patientdetails.model";
 import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
 import UserModel from "../models/user.model";
+import { encrypt, decrypt } from "../lib/crypto";
 import { getCloudinaryPublicId } from "../lib/utils";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 import { generateAIResponse } from "../lib/AiSummary";
