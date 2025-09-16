@@ -449,7 +449,7 @@ export const getDoctorDetails = async (
   try {
     const doctorDetailsEncrypted = await PatientDetail.find({
       doctor: doctorId,
-    }).sort({ createdOn: -1 });
+    }).sort({ createdOn: -1 }).lean();
 
     if (!doctorDetailsEncrypted) {
       res.status(404).json({

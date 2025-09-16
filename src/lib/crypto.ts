@@ -23,7 +23,7 @@ export function decryptString(encryptedBase64: string): string {
 
     // sanity check: payload should be at least 12+16 bytes (iv + tag)
     if (payload.length < 28) {
-      console.warn("Invalid payload length for decryption:", payload.length);
+      // console.warn("Invalid payload length for decryption:", payload.length);
       return encryptedBase64; // return raw if not valid
     }
 
@@ -38,7 +38,9 @@ export function decryptString(encryptedBase64: string): string {
     const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
     return decrypted.toString("utf8");
   } catch (err) {
-    console.error("Decryption failed, returning raw value:", encryptedBase64, err);
+    // console.error("Decryption failed, returning raw value:", encryptedBase64, err);
+
+    // return default value if the value was not encrypted to decrypt in the first place
     return encryptedBase64; // fallback
   }
 }
