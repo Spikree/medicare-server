@@ -13,6 +13,9 @@ import { getCloudinaryPublicId } from "../lib/utils";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 import { generateAIResponse } from "../lib/AiSummary";
 import AiChatHistory from "../models/AiChatHistory.model";
+import redisClient from "../lib/redisClient";
+
+const defaultRedisExpiry: number = 3600;
 
 export const addNewPatient = async (
   req: Request,
@@ -86,21 +89,37 @@ export const getPatientList = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const currentUser = req.user;
-    const patientList = await PatientList.find({ doctor: currentUser?._id });
+  const currentUser = req.user;
 
-    if (!patientList) {
-      res.status(404).json({
-        message: "Patient list not found",
+  try {
+    const cachedPatients = await redisClient.get("getPatientList");
+
+    if(cachedPatients) {
+      res.status(200).json({
+        message: "Patient list fetched sucessfully (from cache)",
+        patientList: JSON.parse(cachedPatients)
       });
       return;
     }
 
+    const patientList = await PatientList.find({
+      doctor: currentUser?._id,
+    })
+
+    if(!patientList) {
+      res.status(404).json({
+        message: "Patient list not found"
+      });
+      return;
+    }
+
+    await redisClient.setEx("getPatientList", defaultRedisExpiry, JSON.stringify(patientList));
+
     res.status(200).json({
-      message: "Patient list fetched sucessfully",
+      message: "Patient list fetched successfully (from DB)",
       patientList,
-    });
+    })
+
   } catch (error: unknown) {
     console.log("error in doctor controller at get patient list", error);
     res.status(500).json({
@@ -339,7 +358,9 @@ export const getPatientDetails = async (
   try {
     const patientDetailsEncrypted = await PatientDetail.find({
       patient: patientId,
-    }).sort({ createdOn: -1 }).lean();
+    })
+      .sort({ createdOn: -1 })
+      .lean();
 
     if (!patientDetailsEncrypted) {
       res.status(404).json({
