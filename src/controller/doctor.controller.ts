@@ -439,7 +439,8 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
       res.status(200).json({
         message: "Fetched patient lab results sucessfully ( from cache )",
         patientLabResults: JSON.parse(cachedPatientLabDetails),
-      })
+      });
+      return;
     }
 
     const patientLabResults = await patientLabResult.find({
