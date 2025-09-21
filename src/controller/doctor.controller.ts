@@ -92,7 +92,8 @@ export const getPatientList = async (
   const currentUser = req.user;
 
   try {
-    const cachedPatients = await redisClient.get("getPatientList");
+    const cacheKey = `getPatientList:${currentUser?._id}`
+    const cachedPatients = await redisClient.get(cacheKey);
 
     if(cachedPatients) {
       res.status(200).json({
@@ -113,7 +114,7 @@ export const getPatientList = async (
       return;
     }
 
-    await redisClient.setEx("getPatientList", defaultRedisExpiry, JSON.stringify(patientList));
+    await redisClient.setEx(cacheKey, defaultRedisExpiry, JSON.stringify(patientList));
 
     res.status(200).json({
       message: "Patient list fetched successfully (from DB)",
@@ -316,6 +317,17 @@ export const getPatientReview = async (
   }
 
   try {
+
+    const cacheKey = `getPatientReviews:${patientDetailId}`
+    const cachedPatientReviews = await redisClient.get(cacheKey);
+
+    if(cachedPatientReviews) {
+      res.status(200).json({
+        message: "Fetched all patient reviews sucessfully ( from cache )",
+        patientReview: JSON.parse(cachedPatientReviews),
+      })
+    }
+
     const patientReview = await PatientReview.find({
       patientDetail: patientDetailId,
     })
@@ -329,8 +341,10 @@ export const getPatientReview = async (
       return;
     }
 
+    await redisClient.setEx(cacheKey, defaultRedisExpiry, JSON.stringify(patientReview));
+
     res.status(200).json({
-      message: "Fetched all patient reviews sucessfully",
+      message: "Fetched all patient reviews sucessfully ( from db )",
       patientReview,
     });
   } catch (error) {
@@ -342,6 +356,7 @@ export const getPatientReview = async (
   }
 };
 
+// encrypt the cached data according to the compliance
 export const getPatientDetails = async (
   req: Request,
   res: Response
@@ -356,6 +371,19 @@ export const getPatientDetails = async (
   }
 
   try {
+
+    const cacheKey = `getPatientDetails:${patientId}`
+
+    const cachedPatientDetails = await redisClient.get(cacheKey);
+
+    if(cachedPatientDetails) {
+      res.status(200).json({
+        message: "Fetched patient details sucessfully ( from cache )",
+        patientDetails: JSON.parse(cachedPatientDetails),
+      });
+      return;
+    }
+
     const patientDetailsEncrypted = await PatientDetail.find({
       patient: patientId,
     })
@@ -377,8 +405,10 @@ export const getPatientDetails = async (
       medicationPrescribed: decryptString(detail.medicationPrescribed),
     }));
 
+    await redisClient.setEx(cacheKey,defaultRedisExpiry, JSON.stringify(patientDetails));
+
     res.status(200).json({
-      message: "Fetched patient details sucessfully",
+      message: "Fetched patient details sucessfully ( from db )",
       patientDetails,
     });
   } catch (error) {
@@ -401,6 +431,17 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
   }
 
   try {
+
+    const cacheKey = `getPatientLabResults:${patientId}`
+    const cachedPatientLabDetails = await redisClient.get(cacheKey);
+
+    if(cachedPatientLabDetails) {
+      res.status(200).json({
+        message: "Fetched patient lab results sucessfully ( from cache )",
+        patientLabResults: JSON.parse(cachedPatientLabDetails),
+      })
+    }
+
     const patientLabResults = await patientLabResult.find({
       patient: patientId,
     });
@@ -413,8 +454,10 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
       return;
     }
 
+    await redisClient.setEx(cacheKey, defaultRedisExpiry,JSON.stringify(patientLabResults));
+
     res.status(200).json({
-      message: "Fetched patient lab results sucessfully",
+      message: "Fetched patient lab results sucessfully ( from db )",
       patientLabResults,
     });
   } catch (error) {
