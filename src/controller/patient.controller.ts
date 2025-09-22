@@ -9,6 +9,9 @@ import PatientReview from "../models/patientreview.model";
 import RequestModel from "../models/request.model";
 import UserModel from "../models/user.model";
 import { decryptString } from "../lib/crypto";
+import redisClient from "../lib/redisClient";
+
+const defaultRedisExpiry: number = 3600;
 
 export const getDoctorList = async (
   req: Request,
@@ -17,6 +20,18 @@ export const getDoctorList = async (
   const currentUser = req.user;
 
   try {
+    const caheKey = `getDoctorList:${currentUser?._id}`;
+
+    const cachedDoctorList = await redisClient.get(caheKey);
+
+    if (cachedDoctorList) {
+      res.status(200).json({
+        message: "Fetched doctors list sucessfully ( from cache )",
+        doctors: JSON.parse(cachedDoctorList),
+      });
+      return;
+    }
+
     const doctors = await PatientList.find({
       patient: currentUser?._id,
     }).populate("doctor", "name email");
@@ -28,8 +43,14 @@ export const getDoctorList = async (
       return;
     }
 
+    await redisClient.setEx(
+      caheKey,
+      defaultRedisExpiry,
+      JSON.stringify(doctors)
+    );
+
     res.status(200).json({
-      message: "Fetched doctors list sucessfully",
+      message: "Fetched doctors list sucessfully ( from db )",
       doctors,
     });
   } catch (error) {
@@ -143,7 +164,19 @@ export const addAllergiesAndHealthinfo = async (
 export const getLabResults = async (req: Request, res: Response) => {
   const currentUser = req.user;
 
+  const cacheKey = `getLabResults:${currentUser?._id}`;
+
   try {
+    const cachedLabResults = await redisClient.get(cacheKey);
+
+    if (cachedLabResults) {
+      res.status(200).json({
+        message: "Fetched patient lab results sucessfully ( from cache )",
+        patientLabResults: JSON.parse(cachedLabResults),
+      });
+      return;
+    }
+
     const patientLabResults = await patientLabResult.find({
       patient: currentUser?._id,
     });
@@ -156,8 +189,14 @@ export const getLabResults = async (req: Request, res: Response) => {
       return;
     }
 
+    await redisClient.setEx(
+      cacheKey,
+      defaultRedisExpiry,
+      JSON.stringify(patientLabResults)
+    );
+
     res.status(200).json({
-      message: "Fetched patient lab results sucessfully",
+      message: "Fetched patient lab results sucessfully ( from db )",
       patientLabResults,
     });
   } catch (error) {
@@ -449,7 +488,9 @@ export const getDoctorDetails = async (
   try {
     const doctorDetailsEncrypted = await PatientDetail.find({
       doctor: doctorId,
-    }).sort({ createdOn: -1 }).lean();
+    })
+      .sort({ createdOn: -1 })
+      .lean();
 
     if (!doctorDetailsEncrypted) {
       res.status(404).json({
