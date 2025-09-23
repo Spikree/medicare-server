@@ -486,6 +486,16 @@ export const getDoctorDetails = async (
   }
 
   try {
+    const caheKey = `getDoctorDetails:${doctorId}`;
+    const cachedDoctorDetails = await redisClient.get(caheKey);
+
+    if (cachedDoctorDetails) {
+      res.status(200).json({
+        message: "Doctor details fetched sucessfully ( from cache )",
+        doctorDetails: JSON.parse(cachedDoctorDetails),
+      });
+    }
+
     const doctorDetailsEncrypted = await PatientDetail.find({
       doctor: doctorId,
     })
@@ -507,9 +517,15 @@ export const getDoctorDetails = async (
       medicationPrescribed: decryptString(detail.medicationPrescribed),
     }));
 
+    await redisClient.setEx(
+      caheKey,
+      defaultRedisExpiry,
+      JSON.stringify(doctorDetails)
+    );
+
     res.status(200).json({
+      message: "Doctor details fetched sucessfully ( from db )",
       doctorDetails,
-      message: "Doctor details fetched sucessfully",
     });
   } catch (error) {
     console.log("error in patient controller at get doctor details", error);
@@ -576,6 +592,17 @@ export const getLabResultsByDoctor = async (
   }
 
   try {
+    const cacheKey = `getLabResultsByDoctor:${doctorId}:${currentUser?._id}`;
+    const cachedLabResultsByDoctor = await redisClient.get(cacheKey);
+
+    if (cachedLabResultsByDoctor) {
+      res.status(200).json({
+        message: "Fetched lab results by doctor sucessfully ( from cache )",
+        labResultsByDoctor: JSON.parse(cachedLabResultsByDoctor),
+      });
+      return;
+    }
+
     const labResultsByDoctor = await patientLabResult.find({
       addedBy: doctorId,
       patient: currentUser?._id,
@@ -588,8 +615,14 @@ export const getLabResultsByDoctor = async (
       return;
     }
 
+    await redisClient.setEx(
+      cacheKey,
+      defaultRedisExpiry,
+      JSON.stringify(labResultsByDoctor)
+    );
+
     res.status(200).json({
-      message: "Fetched lab results by doctor sucessfully",
+      message: "Fetched lab results by doctor sucessfully ( from db )",
       labResultsByDoctor,
     });
   } catch (error) {
