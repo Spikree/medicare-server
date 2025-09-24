@@ -21,6 +21,11 @@ export const addNewPatient = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const currentUser = req.user;
+  const { patientId } = req.body;
+
+  const cacheKeyToDelete = `getPatientList:${currentUser?._id}`;
+
   try {
     if (!req.body || typeof req.body !== "object") {
       res.status(400).json({
@@ -28,9 +33,6 @@ export const addNewPatient = async (
       });
       return;
     }
-
-    const currentUser = req.user;
-    const { patientId } = req.body;
 
     if (!patientId) {
       res.status(400).json({
@@ -72,6 +74,8 @@ export const addNewPatient = async (
 
     await newPatient.save();
 
+    await redisClient.del(cacheKeyToDelete);
+
     res.status(200).json({
       message: "New patient added sucessfully",
       newPatient,
@@ -92,35 +96,38 @@ export const getPatientList = async (
   const currentUser = req.user;
 
   try {
-    const cacheKey = `getPatientList:${currentUser?._id}`
+    const cacheKey = `getPatientList:${currentUser?._id}`;
     const cachedPatients = await redisClient.get(cacheKey);
 
-    if(cachedPatients) {
+    if (cachedPatients) {
       res.status(200).json({
         message: "Patient list fetched sucessfully (from cache)",
-        patientList: JSON.parse(cachedPatients)
+        patientList: JSON.parse(cachedPatients),
       });
       return;
     }
 
     const patientList = await PatientList.find({
       doctor: currentUser?._id,
-    })
+    });
 
-    if(!patientList) {
+    if (!patientList) {
       res.status(404).json({
-        message: "Patient list not found"
+        message: "Patient list not found",
       });
       return;
     }
 
-    await redisClient.setEx(cacheKey, defaultRedisExpiry, JSON.stringify(patientList));
+    await redisClient.setEx(
+      cacheKey,
+      defaultRedisExpiry,
+      JSON.stringify(patientList)
+    );
 
     res.status(200).json({
       message: "Patient list fetched successfully (from DB)",
       patientList,
-    })
-
+    });
   } catch (error: unknown) {
     console.log("error in doctor controller at get patient list", error);
     res.status(500).json({
@@ -143,6 +150,8 @@ export const uploadLabResults = async (
   const { title } = req.body;
   const { patientId } = req.params;
   const currentUser = req.user;
+
+  const cacheKeyToDelete = `getPatientLabResults:${patientId}`;
 
   if (!patientId) {
     res.status(400).json({
@@ -175,6 +184,8 @@ export const uploadLabResults = async (
     });
 
     await newPatientLabResult.save();
+
+    await redisClient.del(cacheKeyToDelete);
 
     res.status(200).json({
       message: "Patient lab result uploaded sucessfully",
@@ -218,6 +229,8 @@ export const addPatientDetails = async (
     return;
   }
 
+  const cacheKeyToDelete = `getPatientDetails:${patientId}`;
+
   try {
     const patient = await User.findById(patientId);
 
@@ -239,6 +252,8 @@ export const addPatientDetails = async (
 
     await patientDetail.save();
 
+    await redisClient.del(cacheKeyToDelete);
+
     res.status(200).json({
       message: "Patient details added sucessfully",
       patientDetail,
@@ -258,6 +273,8 @@ export const addPatientReview = async (
 ): Promise<void> => {
   const { patientDetailId } = req.params;
   const currentUser = req.user;
+
+  const cacheKeyToDelete = `getPatientReviews:${patientDetailId}`;
 
   if (!req.body || typeof req.body !== "object") {
     res.status(400).json({
@@ -290,6 +307,8 @@ export const addPatientReview = async (
 
     await newPatientReview.save();
 
+    await redisClient.del(cacheKeyToDelete);
+
     res.status(200).json({
       message: "Added new patient review",
       newPatientReview,
@@ -317,15 +336,14 @@ export const getPatientReview = async (
   }
 
   try {
-
-    const cacheKey = `getPatientReviews:${patientDetailId}`
+    const cacheKey = `getPatientReviews:${patientDetailId}`;
     const cachedPatientReviews = await redisClient.get(cacheKey);
 
-    if(cachedPatientReviews) {
+    if (cachedPatientReviews) {
       res.status(200).json({
         message: "Fetched all patient reviews sucessfully ( from cache )",
         patientReview: JSON.parse(cachedPatientReviews),
-      })
+      });
     }
 
     const patientReview = await PatientReview.find({
@@ -341,7 +359,11 @@ export const getPatientReview = async (
       return;
     }
 
-    await redisClient.setEx(cacheKey, defaultRedisExpiry, JSON.stringify(patientReview));
+    await redisClient.setEx(
+      cacheKey,
+      defaultRedisExpiry,
+      JSON.stringify(patientReview)
+    );
 
     res.status(200).json({
       message: "Fetched all patient reviews sucessfully ( from db )",
@@ -371,12 +393,11 @@ export const getPatientDetails = async (
   }
 
   try {
-
-    const cacheKey = `getPatientDetails:${patientId}`
+    const cacheKey = `getPatientDetails:${patientId}`;
 
     const cachedPatientDetails = await redisClient.get(cacheKey);
 
-    if(cachedPatientDetails) {
+    if (cachedPatientDetails) {
       res.status(200).json({
         message: "Fetched patient details sucessfully ( from cache )",
         patientDetails: JSON.parse(cachedPatientDetails),
@@ -405,7 +426,11 @@ export const getPatientDetails = async (
       medicationPrescribed: decryptString(detail.medicationPrescribed),
     }));
 
-    await redisClient.setEx(cacheKey,defaultRedisExpiry, JSON.stringify(patientDetails));
+    await redisClient.setEx(
+      cacheKey,
+      defaultRedisExpiry,
+      JSON.stringify(patientDetails)
+    );
 
     res.status(200).json({
       message: "Fetched patient details sucessfully ( from db )",
@@ -431,11 +456,10 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
   }
 
   try {
-
-    const cacheKey = `getPatientLabResults:${patientId}`
+    const cacheKey = `getPatientLabResults:${patientId}`;
     const cachedPatientLabDetails = await redisClient.get(cacheKey);
 
-    if(cachedPatientLabDetails) {
+    if (cachedPatientLabDetails) {
       res.status(200).json({
         message: "Fetched patient lab results sucessfully ( from cache )",
         patientLabResults: JSON.parse(cachedPatientLabDetails),
@@ -455,7 +479,11 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
       return;
     }
 
-    await redisClient.setEx(cacheKey, defaultRedisExpiry,JSON.stringify(patientLabResults));
+    await redisClient.setEx(
+      cacheKey,
+      defaultRedisExpiry,
+      JSON.stringify(patientLabResults)
+    );
 
     res.status(200).json({
       message: "Fetched patient lab results sucessfully ( from db )",
@@ -625,6 +653,8 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     return;
   }
 
+  const cacheKeyToDelete = `getPatientList:${currentUser?._id}`;
+
   try {
     const request = await RequestModel.findOne({
       _id: requestId,
@@ -643,6 +673,8 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     await newPatient.save();
 
     await request?.deleteOne();
+
+    await redisClient.del(cacheKeyToDelete);
 
     res.status(200).json({
       message: "Patient added sucessfully",
@@ -715,5 +747,3 @@ export const getAllPatientInfo = async (
     return;
   }
 };
-
-// The aiSummary and askPatientQuestion functions have been moved to gemini.controller.ts for AI chat and summary features.
