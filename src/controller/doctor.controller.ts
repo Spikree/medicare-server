@@ -189,6 +189,7 @@ export const uploadLabResults = async (
     await newPatientLabResult.save();
 
     await redisClient.del(cacheKeyToDelete);
+    await redisClient.del(cacheKeyToDeleteForPatientSide);
 
     res.status(200).json({
       message: "Patient lab result uploaded sucessfully",

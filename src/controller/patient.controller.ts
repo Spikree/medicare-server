@@ -76,6 +76,7 @@ export const uploadLabResults = async (
   const { title } = req.body;
   const currentUser = req.user;
   const cacheKeyToDelete = `getLabResults:${currentUser?._id}`;
+  const cacheKeyToDeleteForDoctor = `getPatientLabResults:${currentUser?._id}`;
 
   if (!req.file) {
     res.status(400).json({ message: "No file uploaded" });
@@ -103,6 +104,8 @@ export const uploadLabResults = async (
     await newPatientLabResult.save();
 
     await redisClient.del(cacheKeyToDelete);
+
+    await redisClient.del(cacheKeyToDeleteForDoctor);
 
     res.status(200).json({
       message: "Patient lab result uploaded sucessfully",
