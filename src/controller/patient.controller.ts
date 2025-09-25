@@ -20,9 +20,9 @@ export const getDoctorList = async (
   const currentUser = req.user;
 
   try {
-    const caheKey = `getDoctorList:${currentUser?._id}`;
+    const cacheKey = `getDoctorList:${currentUser?._id}`;
 
-    const cachedDoctorList = await redisClient.get(caheKey);
+    const cachedDoctorList = await redisClient.get(cacheKey);
 
     if (cachedDoctorList) {
       res.status(200).json({
@@ -44,7 +44,7 @@ export const getDoctorList = async (
     }
 
     await redisClient.setEx(
-      caheKey,
+      cacheKey,
       defaultRedisExpiry,
       JSON.stringify(doctors)
     );
@@ -75,6 +75,7 @@ export const uploadLabResults = async (
 
   const { title } = req.body;
   const currentUser = req.user;
+  const cacheKeyToDelete = `getLabResults:${currentUser?._id}`;
 
   if (!req.file) {
     res.status(400).json({ message: "No file uploaded" });
@@ -100,6 +101,8 @@ export const uploadLabResults = async (
     });
 
     await newPatientLabResult.save();
+
+    await redisClient.del(cacheKeyToDelete);
 
     res.status(200).json({
       message: "Patient lab result uploaded sucessfully",
@@ -316,16 +319,13 @@ export const addDoctorRequest = async (
     }
 
     const existingRequest = await RequestModel.findOne({
-      receiver: doctorId,
-      sender: currentUser?._id,
+      $or: [
+        { receiver: doctorId, sender: currentUser?._id },
+        { receiver: currentUser?._id, sender: doctorId },
+      ],
     });
 
-    const existingRequest2 = await RequestModel.findOne({
-      receiver: currentUser?._id,
-      sender: doctorId,
-    });
-
-    if (existingRequest || existingRequest2) {
+    if (existingRequest) {
       res.status(400).json({
         message:
           "Either this user has sent you a request or you have already sent one request",
@@ -390,6 +390,8 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
   const { requestId } = req.params;
   const currentUser = req.user;
 
+  const cacheKeyToDelete = `getDoctorList:${currentUser?._id}`;
+
   if (!requestId) {
     res.status(400).json({
       message: "please provide a request id",
@@ -415,6 +417,8 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     await newPatient.save();
 
     await request?.deleteOne();
+
+    await redisClient.del(cacheKeyToDelete);
 
     res.status(200).json({
       message: "New patient added",
@@ -486,14 +490,15 @@ export const getDoctorDetails = async (
   }
 
   try {
-    const caheKey = `getDoctorDetails:${doctorId}`;
-    const cachedDoctorDetails = await redisClient.get(caheKey);
+    const cacheKey = `getDoctorDetails:${doctorId}`;
+    const cachedDoctorDetails = await redisClient.get(cacheKey);
 
     if (cachedDoctorDetails) {
       res.status(200).json({
         message: "Doctor details fetched sucessfully ( from cache )",
         doctorDetails: JSON.parse(cachedDoctorDetails),
       });
+      return;
     }
 
     const doctorDetailsEncrypted = await PatientDetail.find({
@@ -518,7 +523,7 @@ export const getDoctorDetails = async (
     }));
 
     await redisClient.setEx(
-      caheKey,
+      cacheKey,
       defaultRedisExpiry,
       JSON.stringify(doctorDetails)
     );
@@ -705,6 +710,8 @@ export const removeDoctor = async (
   const { doctorId } = req.params;
   const currentUser = req.user;
 
+  const cacheKeyToDelete = `getDoctorList:${currentUser?._id}`;
+
   if (!doctorId) {
     res.status(400).json({
       message: "Doctor Id is not provided",
@@ -717,6 +724,8 @@ export const removeDoctor = async (
       { doctor: doctorId, patient: currentUser?._id },
       { $set: { patientStatus: "old" } }
     );
+
+    await redisClient.del(cacheKeyToDelete);
 
     res.status(200).json({
       message: "Doctor removed",
@@ -737,6 +746,8 @@ export const assignDoctor = async (
   const { doctorId } = req.params;
   const currentUser = req.user;
 
+  const cacheKeyToDelete = `getDoctorList:${currentUser?._id}`;
+
   if (!doctorId) {
     res.status(400).json({
       message: "Doctor Id is not provided",
@@ -749,6 +760,8 @@ export const assignDoctor = async (
       { doctor: doctorId, patient: currentUser?._id },
       { $set: { patientStatus: "current" } }
     );
+
+    await redisClient.del(cacheKeyToDelete);
 
     res.status(200).json({
       message: "Doctor reassigned",

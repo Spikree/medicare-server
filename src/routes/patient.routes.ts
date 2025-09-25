@@ -62,7 +62,7 @@ router.post("/reassignDoctor/:doctorId", verifyToken,checkPatientRole, assignDoc
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
-router.get("/getLabResultsByDoctor/:doctorId", verifyToken, checkPatientRole, getLabResultsByDoctor)
+router.get("/getLabResultsByDoctor/:doctorId", verifyToken, checkPatientRole, getLabResultsByDoctor);
 router.get(
   "/getDoctorDetails/:doctorId",
   verifyToken,

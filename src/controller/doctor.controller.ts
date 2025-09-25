@@ -25,6 +25,7 @@ export const addNewPatient = async (
   const { patientId } = req.body;
 
   const cacheKeyToDelete = `getPatientList:${currentUser?._id}`;
+  const cacheKeyToDeleteForPatientSide = `getDoctorList:${currentUser?._id}`;
 
   try {
     if (!req.body || typeof req.body !== "object") {
@@ -75,6 +76,7 @@ export const addNewPatient = async (
     await newPatient.save();
 
     await redisClient.del(cacheKeyToDelete);
+    await redisClient.del(cacheKeyToDeleteForPatientSide);
 
     res.status(200).json({
       message: "New patient added sucessfully",
@@ -152,6 +154,7 @@ export const uploadLabResults = async (
   const currentUser = req.user;
 
   const cacheKeyToDelete = `getPatientLabResults:${patientId}`;
+  const cacheKeyToDeleteForPatientSide = `getLabResultsByDoctor:${currentUser?._id}:${patientId}`;
 
   if (!patientId) {
     res.status(400).json({
@@ -215,6 +218,8 @@ export const addPatientDetails = async (
   const { patientId } = req.params;
   const currentUser = req.user;
 
+  
+
   if (!Disease || !symptom || !patientExperience || !medicationPrescribed) {
     res.status(400).json({
       message: "Please fill in the required fields",
@@ -230,6 +235,7 @@ export const addPatientDetails = async (
   }
 
   const cacheKeyToDelete = `getPatientDetails:${patientId}`;
+  const cacheKeyToDeleteForPatientSide = `getDoctorDetails:${currentUser?._id}`;
 
   try {
     const patient = await User.findById(patientId);
@@ -253,6 +259,7 @@ export const addPatientDetails = async (
     await patientDetail.save();
 
     await redisClient.del(cacheKeyToDelete);
+    await redisClient.del(cacheKeyToDeleteForPatientSide);
 
     res.status(200).json({
       message: "Patient details added sucessfully",
@@ -467,9 +474,12 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
       return;
     }
 
-    const patientLabResults = await patientLabResult.find({
-      patient: patientId,
-    });
+    const patientLabResults = await patientLabResult
+      .find({
+        patient: patientId,
+      })
+      .sort({ createdOn: -1 })
+      .lean();
 
     if (!patientLabResults) {
       res.status(404).json({
