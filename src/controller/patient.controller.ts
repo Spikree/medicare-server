@@ -133,7 +133,16 @@ export const addAllergiesAndHealthinfo = async (
 
   const currentUser = req.user;
 
+  const cacheKeyToDelete = `getAllergiesAndHealthInfo:${currentUser?._id}`;
+
   const { allergies, generalHealthInfo } = req.body;
+
+  if (!allergies && !generalHealthInfo) {
+    res.status(400).json({
+      message: "Please provide either allergies or health information",
+    });
+    return;
+  }
 
   if (!allergies && !generalHealthInfo) {
     res.status(400).json({
@@ -143,6 +152,25 @@ export const addAllergiesAndHealthinfo = async (
   }
 
   try {
+    const isAllergiesAndHealthInfo =
+      await AllergiesAndGeneralHealthInfo.findOne({
+        patient: currentUser?._id,
+      });
+
+    if (isAllergiesAndHealthInfo) {
+      (isAllergiesAndHealthInfo.allergies = allergies),
+        (isAllergiesAndHealthInfo.generalHealthInfo = generalHealthInfo);
+      isAllergiesAndHealthInfo.save();
+
+      await redisClient.del(cacheKeyToDelete);
+
+      res.status(200).json({
+        message: "edited allergies and health info",
+        allergiesAndGeneralHealthInfo: isAllergiesAndHealthInfo,
+      });
+      return;
+    }
+
     const allergiesAndGeneralHealthInfo = new AllergiesAndGeneralHealthInfo({
       patient: currentUser?._id,
       allergies: allergies,
@@ -150,6 +178,8 @@ export const addAllergiesAndHealthinfo = async (
     });
 
     await allergiesAndGeneralHealthInfo.save();
+
+    redisClient.del(cacheKeyToDelete);
 
     res.status(200).json({
       message: "saved allergies and general health info",

@@ -3,6 +3,10 @@ import UserModel from "../models/user.model";
 import fs from "fs";
 import { getCloudinaryPublicId } from "../lib/utils";
 import cloudinary from "../lib/cloudinary";
+import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
+import redisClient from "../lib/redisClient";
+
+const defaultRedisExpiry: number = 3600;
 
 export const editProfile = async (
   req: Request,
@@ -67,24 +71,76 @@ export const editProfile = async (
 };
 
 export const getUserProfile = async (req: Request, res: Response) => {
-  const {id: userId} = req.params;
+  const { id: userId } = req.params;
 
   try {
     const user = await UserModel.findById(userId).select("-password").lean();
 
-    if(!user) {
+    if (!user) {
       res.status(404).json({
-        message: "No user found"
+        message: "No user found",
       });
       return;
     }
 
     res.status(200).json({
       message: "user fetched",
-      user
-    })
+      user,
+    });
   } catch (error) {
     console.log("error in common controller at get user profile", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getAllergiesAndHealthInfo = async (
+  req: Request,
+  res: Response
+) => {
+  const { patientId } = req.params;
+
+  const cachekey = `getAllergiesAndHealthInfo:${patientId}`;
+
+  try {
+    const cachedAllergiesAndHealthInfo = await redisClient.get(cachekey);
+
+    if (cachedAllergiesAndHealthInfo) {
+      res.status(200).json({
+        message: "Fetched allergies and health info sucessfully ( from cache )",
+        allergiesAndHealthInfo: JSON.parse(cachedAllergiesAndHealthInfo),
+      });
+      return;
+    }
+
+    const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.findOne({
+      patient: patientId,
+    });
+
+    if (!allergiesAndHealthInfo) {
+      res.status(404).json({
+        message: "No allergies and health info found for this patient",
+      });
+      return;
+    }
+
+    redisClient.setEx(
+      cachekey,
+      defaultRedisExpiry,
+      JSON.stringify(allergiesAndHealthInfo)
+    );
+
+    res.status(200).json({
+      message: "Fetched allergies and health info sucessfully ( from db )",
+      allergiesAndHealthInfo,
+    });
+  } catch (error) {
+    console.log(
+      "error in common controller at get allergies and health info",
+      error
+    );
     res.status(500).json({
       message: "Internal server error",
     });
