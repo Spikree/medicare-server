@@ -350,6 +350,7 @@ export const getPatientReview = async (
         message: "Fetched all patient reviews sucessfully ( from cache )",
         patientReview: JSON.parse(cachedPatientReviews),
       });
+      return;
     }
 
     const patientReview = await PatientReview.find({
