@@ -423,8 +423,6 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
   const { requestId } = req.params;
   const currentUser = req.user;
 
-  const cacheKeyToDelete = `getDoctorList:${currentUser?._id}`;
-
   if (!requestId) {
     res.status(400).json({
       message: "please provide a request id",
@@ -436,6 +434,9 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     const request = await RequestModel.findOne({
       _id: requestId,
     });
+
+    const cacheKeyToDelete = `getDoctorList:${currentUser?._id}`;
+    const cacheKeyToDeleteForDoctor = `getPatientList:${request?.sender}`;
 
     const doctor = await UserModel.findById(request?.sender);
 
@@ -450,8 +451,8 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     await newPatient.save();
 
     await request?.deleteOne();
-
     await redisClient.del(cacheKeyToDelete);
+    await redisClient.del(cacheKeyToDeleteForDoctor);
 
     res.status(200).json({
       message: "New patient added",

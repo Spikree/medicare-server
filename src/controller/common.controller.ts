@@ -103,6 +103,7 @@ export const getAllergiesAndHealthInfo = async (
   const { patientId } = req.params;
 
   const cachekey = `getAllergiesAndHealthInfo:${patientId}`;
+  // TODO : delete this from anywhere that makes changes to the data
 
   try {
     const cachedAllergiesAndHealthInfo = await redisClient.get(cachekey);
@@ -118,6 +119,7 @@ export const getAllergiesAndHealthInfo = async (
     const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.findOne({
       patient: patientId,
     });
+    // TODO : Decrypt this data before sending
 
     if (!allergiesAndHealthInfo) {
       res.status(404).json({

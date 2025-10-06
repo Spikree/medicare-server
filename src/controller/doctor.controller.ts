@@ -219,8 +219,6 @@ export const addPatientDetails = async (
   const { patientId } = req.params;
   const currentUser = req.user;
 
-  
-
   if (!Disease || !symptom || !patientExperience || !medicationPrescribed) {
     res.status(400).json({
       message: "Please fill in the required fields",
@@ -664,12 +662,13 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     return;
   }
 
-  const cacheKeyToDelete = `getPatientList:${currentUser?._id}`;
-
   try {
     const request = await RequestModel.findOne({
       _id: requestId,
     });
+
+    const cacheKeyToDelete = `getPatientList:${currentUser?._id}`;
+    const cacheKeyToDeleteForPatientSide = `getDoctorList:${request?.sender}`;
 
     const patient = await UserModel.findById(request?.sender);
 
@@ -686,6 +685,7 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
     await request?.deleteOne();
 
     await redisClient.del(cacheKeyToDelete);
+    await redisClient.del(cacheKeyToDeleteForPatientSide);
 
     res.status(200).json({
       message: "Patient added sucessfully",
