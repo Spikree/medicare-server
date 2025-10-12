@@ -301,6 +301,16 @@ export const addPatientReview = async (
   try {
     const patientDetails = await PatientDetail.findById(patientDetailId);
 
+    const patientList = await PatientList.findOne({patient: patientDetails?.patient});
+
+    if(patientList?.patientStatus === "old") {
+      res.status(400).json({
+        message: "This patient is currently not assigned to you",
+      });
+      return;
+    };
+
+
     const newPatientReview = new PatientReview({
       name: patientDetails?.name,
       patient: patientDetails?.patient,
