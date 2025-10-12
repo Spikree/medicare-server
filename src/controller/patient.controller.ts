@@ -745,6 +745,7 @@ export const removeDoctor = async (
   const currentUser = req.user;
 
   const cacheKeyToDelete = `getDoctorList:${currentUser?._id}`;
+  const cacheKeyToDeleteForDoctor = `getPatientList:${doctorId}`;
 
   if (!doctorId) {
     res.status(400).json({
@@ -760,6 +761,7 @@ export const removeDoctor = async (
     );
 
     await redisClient.del(cacheKeyToDelete);
+    await redisClient.del(cacheKeyToDeleteForDoctor);
 
     res.status(200).json({
       message: "Doctor removed",
@@ -781,6 +783,7 @@ export const assignDoctor = async (
   const currentUser = req.user;
 
   const cacheKeyToDelete = `getDoctorList:${currentUser?._id}`;
+  const cacheKeyToDeleteForDoctor = `getPatientList:${doctorId}`;
 
   if (!doctorId) {
     res.status(400).json({
@@ -796,6 +799,7 @@ export const assignDoctor = async (
     );
 
     await redisClient.del(cacheKeyToDelete);
+    await redisClient.del(cacheKeyToDeleteForDoctor);
 
     res.status(200).json({
       message: "Doctor reassigned",
