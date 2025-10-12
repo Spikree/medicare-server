@@ -103,6 +103,16 @@ export const sendMessage = async (
       });
     }
 
+    const senderSocket = users.get(myId?.toString());
+    if (senderSocket) {
+      senderSocket.forEach((socketId: string) => {
+        io.to(socketId).emit("newMessage", {
+          ...newMessage.toObject(),
+          chatId
+        });
+      });
+    }
+
     res.status(200).json({
       message: "message sent sucessfully",
     });
