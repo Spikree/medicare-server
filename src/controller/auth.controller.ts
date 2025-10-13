@@ -15,6 +15,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
   const { name, email, password, role } = req.body;
 
+  if (/<[^>]*>/g.test(name)) {
+    res.status(400).json({ error: "Invalid name: HTML not allowed" });
+    return;
+  }
+
   if (!email || !name || !password || !role) {
     res.status(400).json({
       message: "Please provide all the required fields",
@@ -144,26 +149,26 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const logout = async (req: Request, res: Response) : Promise<void> => {
+export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
     res.cookie("token", "", {
       maxAge: 0,
       httpOnly: true,
       sameSite: "none",
-      secure: true
+      secure: true,
     });
 
     res.status(200).json({
-      message: "Logged out sucessfully"
+      message: "Logged out sucessfully",
     });
   } catch (error) {
     console.log("Error in logout controller");
     res.status(500).json({
-      message: "Internal server error"
+      message: "Internal server error",
     });
     return;
   }
-}
+};
 
 export const checkAuth = async (req: Request, res: Response): Promise<void> => {
   const user = req.user;
