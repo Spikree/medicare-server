@@ -20,6 +20,7 @@ export const generateToken = (user: TokenPayload, res: Response) => {
     httpOnly: true,
     sameSite: "none",
     secure: true,
+    partitioned: true,
   });
 
   return token;
