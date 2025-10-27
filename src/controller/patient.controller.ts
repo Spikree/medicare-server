@@ -812,3 +812,28 @@ export const assignDoctor = async (
     return;
   }
 };
+
+export const removeDataAccessFromDoctor = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { doctorId } = req.query;
+  const currentUser = req.user;
+
+  try {
+    await PatientList.updateOne(
+      { doctor: doctorId, patient: currentUser?._id },
+      { $set: { patientDataAccess: false } }
+    );
+
+    res.status(200).json({
+      message: "Doctors access to your personal data removed",
+    });
+  } catch (error) {
+    console.log("error in patient controllers at remove doctor access controller", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};

@@ -9,6 +9,7 @@ export interface Patientlist extends Document {
   patient: mongoose.Types.ObjectId;
   doctor: mongoose.Types.ObjectId;
   patientStatus: "current" | "old";
+  patientDataAccess: boolean;
   createdOn: Date;
 }
 
@@ -28,6 +29,11 @@ const PatientListSchema: Schema<Patientlist> = new Schema({
     required: true,
     enum: ["current", "old"],
     default: "current",
+  },
+  patientDataAccess: {
+    type: Boolean,
+    required: true,
+    default: true,
   },
   createdOn: { type: Date, default: () => new Date() },
 });
