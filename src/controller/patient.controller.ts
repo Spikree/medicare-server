@@ -817,7 +817,7 @@ export const removeDataAccessFromDoctor = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { doctorId } = req.query;
+  const { doctorId } = req.params;
   const currentUser = req.user;
 
   try {
@@ -827,10 +827,79 @@ export const removeDataAccessFromDoctor = async (
     );
 
     res.status(200).json({
-      message: "Doctors access to your personal data removed",
+      message: "Doctors access to your medical data removed",
     });
   } catch (error) {
-    console.log("error in patient controllers at remove doctor access controller", error);
+    console.log(
+      "error in patient controllers at remove doctor access controller",
+      error
+    );
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const giveDoctorDataAccess = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { doctorId } = req.params;
+  const currentUser = req.user;
+
+  try {
+    await PatientList.updateOne(
+      { doctor: doctorId, patient: currentUser?._id },
+      { $set: { patientDataAccess: true } }
+    );
+
+    res.status(200).json({
+      message: "Doctor has been given access to your medical data",
+    });
+  } catch (error) {
+    console.log(
+      "error in patient controllers at give doctor access controller",
+      error
+    );
+    res.status(500).json({
+      message: "Internal server error",
+    });
+    return;
+  }
+};
+
+export const getDoctorDataAccessInfo = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { doctorId } = req.params;
+  const currentUser = req.user;
+
+  console.log(doctorId);
+
+  try {
+    const doctorDataAccessInfo = await PatientList.findOne({
+      patient: currentUser?._id,
+      doctor: doctorId,
+    });
+
+    if (!doctorDataAccessInfo) {
+      res.status(404).json({
+        message: "Doctor not found in patient list",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Doctor data access info fetched",
+      doctorDataAccessInfo,
+    });
+  } catch (error) {
+    console.log(
+      "error in patient controllers at get doctor access info controller",
+      error
+    );
     res.status(500).json({
       message: "Internal server error",
     });

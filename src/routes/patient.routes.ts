@@ -9,12 +9,14 @@ import {
   assignDoctor,
   getAllAddRequests,
   getAllPatientInfo,
+  getDoctorDataAccessInfo,
   getDoctorDetails,
   getDoctorList,
   getLabResults,
   getLabResultsByDoctor,
   getPatientDetails,
   getPatientReview,
+  giveDoctorDataAccess,
   removeDataAccessFromDoctor,
   removeDoctor,
   searchDoctors,
@@ -61,8 +63,10 @@ router.post("/searchDoctors", verifyToken, checkPatientRole, searchDoctors);
 router.post("/removeDoctor/:doctorId", verifyToken, checkPatientRole,removeDoctor);
 router.post("/reassignDoctor/:doctorId", verifyToken,checkPatientRole, assignDoctor);
 router.post("/removeDataAccessFromDoctor/:doctorId", verifyToken, checkPatientRole,removeDataAccessFromDoctor );
+router.post("/giveDoctorDataAccess/:doctorId",verifyToken, checkPatientRole,giveDoctorDataAccess);
 
 router.get("/getDoctorList", verifyToken, checkPatientRole, getDoctorList);
+router.get("/getDoctorDataAccessInfo/:doctorId",verifyToken,checkPatientRole,getDoctorDataAccessInfo);
 router.get("/getLabResults", verifyToken, checkPatientRole, getLabResults);
 router.get("/getLabResultsByDoctor/:doctorId", verifyToken, checkPatientRole, getLabResultsByDoctor);
 router.get(

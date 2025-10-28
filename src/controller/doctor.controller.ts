@@ -401,6 +401,8 @@ export const getPatientDetails = async (
   res: Response
 ): Promise<void> => {
   const { patientId } = req.params;
+  const currentUser = req.user;
+
 
   if (!patientId) {
     res.status(400).json({
@@ -410,6 +412,18 @@ export const getPatientDetails = async (
   }
 
   try {
+
+    const patientDetail = await PatientList.findOne({
+      patient: patientId,
+      doctor: currentUser?._id
+    });
+
+    if(!patientDetail?.patientDataAccess) {
+      res.status(400).json({
+        message: "You do not have access to patient data"
+      });
+    }
+
     const cacheKey = `getPatientDetails:${patientId}`;
 
     const cachedPatientDetails = await redisClient.get(cacheKey);
