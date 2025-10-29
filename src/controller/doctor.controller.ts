@@ -243,6 +243,7 @@ export const addPatientDetails = async (
       res.status(404).json({
         message: "No patient with this id",
       });
+      return;
     }
 
     const patientDetail = new PatientDetail({
@@ -422,6 +423,7 @@ export const getPatientDetails = async (
       res.status(400).json({
         message: "You do not have access to patient data"
       });
+      return;
     }
 
     const cacheKey = `getPatientDetails:${patientId}`;
