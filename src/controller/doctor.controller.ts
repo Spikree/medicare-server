@@ -480,6 +480,7 @@ export const getPatientDetails = async (
 
 export const getPatientLabResults = async (req: Request, res: Response) => {
   const { patientId } = req.params;
+  const currentUser = req.user;
 
   if (!patientId) {
     res.status(400).json({
@@ -496,6 +497,18 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
       res.status(200).json({
         message: "Fetched patient lab results sucessfully ( from cache )",
         patientLabResults: JSON.parse(cachedPatientLabDetails),
+      });
+      return;
+    }
+
+    const patientDetail = await PatientList.findOne({
+      patient: patientId,
+      doctor: currentUser?._id
+    });
+
+    if(!patientDetail?.patientDataAccess) {
+      res.status(400).json({
+        message: "You do not have access to patient data"
       });
       return;
     }
