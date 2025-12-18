@@ -12,14 +12,19 @@ import doctorRouter from "./routes/doctor.routes";
 import patientRouter from "./routes/patient.routes";
 import commonRouter from "./routes/common.routes";
 import geminiRouter from "./routes/gemini.routes";
-import chatRouter from "./routes/chat.route"
+import chatRouter from "./routes/chat.route";
 
 import { app, server } from "./socket/socket";
 
 app.use(cookieParser());
 app.use(express.json());
 const port = process.env.PORT || 6000;
-app.use(cors({ origin: ["http://localhost:5173", "https://medicare-client.onrender.com"], credentials: true }));
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://medicare-client.onrender.com"],
+    credentials: true,
+  }),
+);
 connectDb();
 
 app.use("/auth", authRouter);

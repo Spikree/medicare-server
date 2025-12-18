@@ -82,7 +82,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   } catch (error: any) {
     console.log(
       "error in register controller in auth controller",
-      error.message
+      error.message,
     );
     res.status(500).json({
       message: "Internal Server Error",
@@ -151,11 +151,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
-    res.cookie("token", "", {
-      maxAge: 0,
+    // res.cookie("token", "", {
+    //   maxAge: 0,
+    //   httpOnly: true,
+    //   sameSite: "none",
+    //   secure: true,
+    // });
+    //
+    res.clearCookie("token", {
       httpOnly: true,
       sameSite: "none",
       secure: true,
+      partitioned: true,
     });
 
     res.status(200).json({
