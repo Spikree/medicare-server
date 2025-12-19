@@ -53,6 +53,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         email,
         password: hashedPassword,
         role,
+        subscription: {
+          status: "active",
+          plan: "premium",
+          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          billingCycleEndsAt: undefined,
+        },
       }) as UserType) || null;
 
     if (newUser) {

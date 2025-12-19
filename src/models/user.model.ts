@@ -10,6 +10,13 @@ export interface User extends Document {
   profilePicture: string;
   doctorId: string;
   createdOn: Date;
+
+  subscription?: {
+    status: "trialing" | "active" | "past_due" | "canceled" | "expired";
+    plan: "premium" | "basic";
+    trialEndsAt: Date;
+    billingCycleEndsAt?: Date;
+  };
 }
 
 const userSchema: Schema<User> = new Schema({
@@ -25,6 +32,19 @@ const userSchema: Schema<User> = new Schema({
   profilePicture: { type: String },
   doctorId: { type: String },
   createdOn: { type: Date, default: () => new Date() },
+
+  subscription: {
+    status: {
+      type: String,
+      enum: ["trialing", "active", "past_due", "canceled", "expired"],
+    },
+    plan: {
+      type: String,
+      enum: ["premium", "basic"],
+    },
+    trialEndsAt: { type: Date },
+    billingCycleEndsAt: { type: Date },
+  },
 });
 
 const User: Model<User> = mongoose.model<User>("User", userSchema);
