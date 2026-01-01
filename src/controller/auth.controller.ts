@@ -46,20 +46,22 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
     const newUser =
       (new User({
         name,
         email,
         password: hashedPassword,
         role,
-        subscription: {
-          status: "active",
-          plan: "premium",
-          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          billingCycleEndsAt: undefined,
-        },
       }) as UserType) || null;
+
+    if (role === "doctor") {
+      newUser.subscription = {
+        status: "active",
+        plan: "premium",
+        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        billingCycleEndsAt: undefined,
+      };
+    }
 
     if (newUser) {
       await newUser.save();
