@@ -41,3 +41,4 @@ app.get("/", (req: Request, res: Response) => {
 server.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`);
 });
+// server.listen()
