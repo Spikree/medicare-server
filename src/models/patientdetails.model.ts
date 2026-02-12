@@ -7,7 +7,7 @@ export interface PatientDetails extends Document {
   doctor: mongoose.Types.ObjectId;
   Disease: string;
   symptom: string;
-  patientExperience : string;
+  patientExperience: string;
   medicationPrescribed: string;
   createdOn: Date;
 }
@@ -29,10 +29,9 @@ const PatientDetailsSchema: Schema<PatientDetails> = new Schema({
 
 const PatientDetail: Model<PatientDetails> = mongoose.model<PatientDetails>(
   "PatientDetail",
-  PatientDetailsSchema
+  PatientDetailsSchema,
 );
 export default PatientDetail;
-
 
 // import mongoose, { Document, Schema, Model } from "mongoose";
 
@@ -68,4 +67,3 @@ export default PatientDetail;
 //   PatientDetailsSchema
 // );
 // export default PatientDetail;
-

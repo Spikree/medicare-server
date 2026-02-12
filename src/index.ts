@@ -15,6 +15,7 @@ import geminiRouter from "./routes/gemini.routes";
 import chatRouter from "./routes/chat.route";
 
 import { app, server } from "./socket/socket";
+import rateLimiter from "./middleware/rateLimiter.middleware";
 
 app.use(cookieParser());
 app.use(express.json());
@@ -28,7 +29,7 @@ app.use(
 connectDb();
 
 app.use("/auth", authRouter);
-app.use("/doctor", doctorRouter);
+app.use("/doctor", doctorRouter, rateLimiter);
 app.use("/patient", patientRouter);
 app.use("/common", commonRouter);
 app.use("/gemini", geminiRouter);

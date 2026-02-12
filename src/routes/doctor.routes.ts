@@ -18,6 +18,7 @@ import verifyToken from "../middleware/verifytoken.middleware";
 import checkDoctorRole from "../middleware/checkdoctor.middleware";
 import upload from "../middleware/multer.middleware";
 import checkDoctorPatientRelation from "../middleware/checkDoctorPatientRelation.middleware";
+import rateLimiter from "../middleware/rateLimiter.middleware";
 
 const router = express.Router();
 
@@ -28,19 +29,71 @@ router.post(
   checkDoctorRole,
   checkDoctorPatientRelation,
   upload.single("labFile"),
-  uploadLabResults
+  uploadLabResults,
 );
-router.post("/addPatientDetails/:patientId", verifyToken, checkDoctorRole,checkDoctorPatientRelation,addPatientDetails);
-router.post("/addPatientReview/:patientDetailId", verifyToken,checkDoctorRole,addPatientReview);
-router.post("/searchPatients", verifyToken, checkDoctorRole,searchPatients);
-router.post("/addPatientRequest/:patientId", verifyToken, checkDoctorRole,addPatientRequest);
-router.post("/acceptAddRequest/:requestId", verifyToken, checkDoctorRole, acceptAddRequest);
+router.post(
+  "/addPatientDetails/:patientId",
+  verifyToken,
+  checkDoctorRole,
+  checkDoctorPatientRelation,
+  addPatientDetails,
+);
+router.post(
+  "/addPatientReview/:patientDetailId",
+  verifyToken,
+  checkDoctorRole,
+  addPatientReview,
+);
+router.post("/searchPatients", verifyToken, checkDoctorRole, searchPatients);
+router.post(
+  "/addPatientRequest/:patientId",
+  verifyToken,
+  checkDoctorRole,
+  addPatientRequest,
+);
+router.post(
+  "/acceptAddRequest/:requestId",
+  verifyToken,
+  checkDoctorRole,
+  acceptAddRequest,
+);
 
-router.get("/getPatientList", verifyToken, checkDoctorRole, getPatientList);
-router.get("/getPatientDetails/:patientId", verifyToken, checkDoctorRole, getPatientDetails);
-router.get("/getPatientLabResults/:patientId", verifyToken, checkDoctorRole,getPatientLabResults);
-router.get("/getPatientReviews/:patientDetailId", verifyToken, checkDoctorRole,getPatientReview);
-router.get("/getAllAddRequests", verifyToken,checkDoctorRole,getAllAddRequests);
-router.get("/getAllPatientInfo/:patientId", verifyToken, checkDoctorRole,getAllPatientInfo);
+router.get(
+  "/getPatientList",
+  verifyToken,
+  checkDoctorRole,
+  rateLimiter,
+  getPatientList,
+);
+router.get(
+  "/getPatientDetails/:patientId",
+  verifyToken,
+  checkDoctorRole,
+  getPatientDetails,
+);
+router.get(
+  "/getPatientLabResults/:patientId",
+  verifyToken,
+  checkDoctorRole,
+  getPatientLabResults,
+);
+router.get(
+  "/getPatientReviews/:patientDetailId",
+  verifyToken,
+  checkDoctorRole,
+  getPatientReview,
+);
+router.get(
+  "/getAllAddRequests",
+  verifyToken,
+  checkDoctorRole,
+  getAllAddRequests,
+);
+router.get(
+  "/getAllPatientInfo/:patientId",
+  verifyToken,
+  checkDoctorRole,
+  getAllPatientInfo,
+);
 
 export default router;

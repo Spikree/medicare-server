@@ -5,7 +5,10 @@ import { AES_KEY } from "./cryptoKey"; // 32 bytes
 export function encryptString(plainText: string): string {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", AES_KEY, iv);
-  const encrypted = Buffer.concat([cipher.update(plainText, "utf8"), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(plainText, "utf8"),
+    cipher.final(),
+  ]);
   const tag = cipher.getAuthTag();
 
   // Pack everything into one Buffer: [iv | tag | data]

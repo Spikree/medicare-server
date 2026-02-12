@@ -19,7 +19,7 @@ const defaultRedisExpiry: number = 3600;
 
 export const addNewPatient = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const currentUser = req.user;
   const { patientId } = req.body;
@@ -93,7 +93,7 @@ export const addNewPatient = async (
 
 export const getPatientList = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const currentUser = req.user;
 
@@ -123,7 +123,7 @@ export const getPatientList = async (
     await redisClient.setEx(
       cacheKey,
       defaultRedisExpiry,
-      JSON.stringify(patientList)
+      JSON.stringify(patientList),
     );
 
     res.status(200).json({
@@ -141,7 +141,7 @@ export const getPatientList = async (
 
 export const uploadLabResults = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   if (!req.body || typeof req.body !== "object") {
     res.status(400).json({
@@ -206,7 +206,7 @@ export const uploadLabResults = async (
 
 export const addPatientDetails = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   if (!req.body || typeof req.body !== "object") {
     res.status(400).json({
@@ -276,7 +276,7 @@ export const addPatientDetails = async (
 
 export const addPatientReview = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { patientDetailId } = req.params;
   const currentUser = req.user;
@@ -302,15 +302,16 @@ export const addPatientReview = async (
   try {
     const patientDetails = await PatientDetail.findById(patientDetailId);
 
-    const patientList = await PatientList.findOne({patient: patientDetails?.patient});
+    const patientList = await PatientList.findOne({
+      patient: patientDetails?.patient,
+    });
 
-    if(patientList?.patientStatus === "old") {
+    if (patientList?.patientStatus === "old") {
       res.status(400).json({
         message: "This patient is currently not assigned to you",
       });
       return;
-    };
-
+    }
 
     const newPatientReview = new PatientReview({
       name: patientDetails?.name,
@@ -341,7 +342,7 @@ export const addPatientReview = async (
 
 export const getPatientReview = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { patientDetailId } = req.params;
 
@@ -380,7 +381,7 @@ export const getPatientReview = async (
     await redisClient.setEx(
       cacheKey,
       defaultRedisExpiry,
-      JSON.stringify(patientReview)
+      JSON.stringify(patientReview),
     );
 
     res.status(200).json({
@@ -399,11 +400,10 @@ export const getPatientReview = async (
 // encrypt the cached data according to the compliance
 export const getPatientDetails = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { patientId } = req.params;
   const currentUser = req.user;
-
 
   if (!patientId) {
     res.status(400).json({
@@ -413,15 +413,14 @@ export const getPatientDetails = async (
   }
 
   try {
-
     const patientDetail = await PatientList.findOne({
       patient: patientId,
-      doctor: currentUser?._id
+      doctor: currentUser?._id,
     });
 
-    if(!patientDetail?.patientDataAccess) {
+    if (!patientDetail?.patientDataAccess) {
       res.status(400).json({
-        message: "You do not have access to patient data"
+        message: "You do not have access to patient data",
       });
       return;
     }
@@ -462,7 +461,7 @@ export const getPatientDetails = async (
     await redisClient.setEx(
       cacheKey,
       defaultRedisExpiry,
-      JSON.stringify(patientDetails)
+      JSON.stringify(patientDetails),
     );
 
     res.status(200).json({
@@ -503,12 +502,12 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
 
     const patientDetail = await PatientList.findOne({
       patient: patientId,
-      doctor: currentUser?._id
+      doctor: currentUser?._id,
     });
 
-    if(!patientDetail?.patientDataAccess) {
+    if (!patientDetail?.patientDataAccess) {
       res.status(400).json({
-        message: "You do not have access to patient data"
+        message: "You do not have access to patient data",
       });
       return;
     }
@@ -531,7 +530,7 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
     await redisClient.setEx(
       cacheKey,
       defaultRedisExpiry,
-      JSON.stringify(patientLabResults)
+      JSON.stringify(patientLabResults),
     );
 
     res.status(200).json({
@@ -549,7 +548,7 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
 
 export const searchPatients = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   if (!req.body || typeof req.body !== "object") {
     res.status(400).json({
@@ -584,7 +583,7 @@ export const searchPatients = async (
   } catch (error) {
     console.log(
       "error in doctor controller at search patients lab results",
-      error
+      error,
     );
     res.status(500).json({
       message: "Internal server error",
@@ -595,7 +594,7 @@ export const searchPatients = async (
 
 export const addPatientRequest = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { patientId } = req.params;
   const currentUser = req.user;
@@ -660,7 +659,7 @@ export const addPatientRequest = async (
 
 export const getAllAddRequests = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const currentUser = req.user;
 
@@ -740,18 +739,29 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
   }
 };
 
+// TEST
 export const getAllPatientInfo = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { patientId } = req.params;
 
   try {
     const userInfo = await UserModel.findById(patientId).select("-password");
 
-    const patientDetails = await PatientDetail.find({
+    const patientDetailsEncrypted = await PatientDetail.find({
       patient: patientId,
-    }).populate("doctor", "name email");
+    })
+      .populate("doctor", "name email")
+      .lean();
+
+    const patientDetails = patientDetailsEncrypted.map((pd) => ({
+      ...pd,
+      Disease: decryptString(pd.Disease),
+      symptom: decryptString(pd.symptom),
+      patientExperience: decryptString(pd.patientExperience),
+      medicationPrescribed: decryptString(pd.medicationPrescribed),
+    }));
 
     const allergiesAndHealthInfo = await AllergiesAndGeneralHealthInfo.find({
       patient: patientId,
