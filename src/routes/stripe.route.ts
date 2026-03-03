@@ -14,12 +14,6 @@ const router = express.Router();
 import Stripe from "stripe";
 
 const calculateTax = false;
-const stripe = new Stripe(
-  "sk_test_51PV697Rqw2rIoaiH6m45bAM5Cb1NkF296Fj6kbhUFKRMjrZ4GNdFPX0hXAxnOKW5ituX2FqMN7aGMcB6puJClSgn00SCfaYHm0",
-  {
-    typescript: true,
-  },
-);
 
 const calculate_tax = async (orderAmount: number, currency: string) => {
   const taxCalculation = await stripe.tax.calculations.create({
