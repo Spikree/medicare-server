@@ -54,14 +54,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         role,
       }) as UserType) || null;
 
-    if (role === "doctor") {
-      newUser.subscription = {
-        status: "active",
-        plan: "premium",
-        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        billingCycleEndsAt: undefined,
-      };
-    }
+    // if (role === "doctor") {
+    //   newUser.subscription = {
+    //     status: "active",
+    //     plan: "premium",
+    //     trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    //     billingCycleEndsAt: undefined,
+    //   };
+    // }
 
     if (newUser) {
       await newUser.save();

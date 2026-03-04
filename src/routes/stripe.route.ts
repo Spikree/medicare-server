@@ -1,6 +1,7 @@
 import express from "express";
 import verifyToken from "../middleware/verifytoken.middleware";
 import checkDoctorRole from "../middleware/checkdoctor.middleware";
+import User from "../models/user.model"; // ⚠️ Adjust this path to your Mongoose model
 
 import env from "dotenv";
 import path from "path";
@@ -8,145 +9,120 @@ env.config({ path: "./.env" });
 const resolve = path.resolve;
 
 import bodyParser from "body-parser";
+import Stripe from "stripe";
 
 const router = express.Router();
 
-import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_BACKEND_SECRET || "test", {
+  apiVersion: "2023-10-16",
+});
 
-const calculateTax = false;
-
-const calculate_tax = async (orderAmount: number, currency: string) => {
-  const taxCalculation = await stripe.tax.calculations.create({
-    currency,
-    customer_details: {
-      address: {
-        line1: "10709 Cleary Blvd",
-        city: "Plantation",
-        state: "FL",
-        postal_code: "33322",
-        country: "US",
-      },
-      address_source: "shipping",
-    },
-    line_items: [
-      {
-        amount: orderAmount,
-        reference: "ProductRef",
-        tax_behavior: "exclusive",
-        tax_code: "txcd_30011000",
-      },
-    ],
-  });
-
-  return taxCalculation;
-};
-
+// ============================================================================
+// 1. CREATE SUBSCRIPTION (WITH CONDITIONAL FREE TRIAL)
+// ============================================================================
 router.post(
-  "/create-payment-intent",
+  "/create-subscription",
   express.json(),
+  // verifyToken,
   async (req: express.Request, res: express.Response): Promise<void> => {
-    const {
-      currency,
-      paymentMethodType,
-      paymentMethodOptions,
-    }: {
-      currency: string;
-      paymentMethodType: string;
-      paymentMethodOptions?: object;
-    } = req.body;
-
-    let orderAmount = 5999;
-    let params: Stripe.PaymentIntentCreateParams;
-
-    if (calculateTax) {
-      let taxCalculation = await calculate_tax(orderAmount, currency);
-      params = {
-        payment_method_types:
-          paymentMethodType === "link" ? ["link", "card"] : [paymentMethodType],
-        amount: taxCalculation.amount_total,
-        currency: currency,
-        metadata: { tax_calculation: taxCalculation.id },
-      };
-    } else {
-      params = {
-        payment_method_types:
-          paymentMethodType === "link" ? ["link", "card"] : [paymentMethodType],
-        amount: orderAmount,
-        currency: currency,
-      };
-    }
-
-    // If this is for an ACSS payment, we add payment_method_options to create
-    // the Mandate.
-    if (paymentMethodType === "acss_debit") {
-      params.payment_method_options = {
-        acss_debit: {
-          mandate_options: {
-            payment_schedule: "sporadic",
-            transaction_type: "personal",
-          },
-        },
-      };
-    } else if (paymentMethodType === "customer_balance") {
-      params.payment_method_data = {
-        type: "customer_balance",
-      } as any;
-      params.confirm = true;
-      params.customer =
-        req.body.customerId ||
-        (await stripe.customers.create().then((data) => data.id));
-    }
-
-    /**
-     * If API given this data, we can overwride it
-     */
-    if (paymentMethodOptions) {
-      params.payment_method_options = paymentMethodOptions;
-    }
-
     try {
-      const paymentIntent: Stripe.PaymentIntent =
-        await stripe.paymentIntents.create(params);
+      const { email, name, priceId, paymentMethodId } = req.body;
 
-      // Send publishable key and PaymentIntent client_secret to client.
+      const user = await User.findOne({ email: email });
+      if (!user) {
+        throw new Error("User not found in database.");
+      }
+
+      // they've successfully completed this process before.
+      let hasHadTrial = false;
+      if (
+        user.subscription &&
+        user.subscription.status &&
+        user.subscription.status !== "incomplete"
+      ) {
+        hasHadTrial = true;
+      }
+
+      let customerId = req.body.customerId || user.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: email,
+          name: name,
+          ...(paymentMethodId && { payment_method: paymentMethodId }),
+        });
+        customerId = customer.id;
+      }
+
+      if (paymentMethodId) {
+        await stripe.customers.update(customerId, {
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+      }
+
+      const subscriptionParams: Stripe.SubscriptionCreateParams = {
+        customer: customerId,
+        items: [{ price: priceId }],
+        payment_behavior: "default_incomplete",
+        payment_settings: { save_default_payment_method: "on_subscription" },
+        expand: ["latest_invoice.payment_intent", "pending_setup_intent"],
+      };
+
+      // Only add the trial if they've never had one
+      if (!hasHadTrial) {
+        subscriptionParams.trial_period_days = 7;
+      }
+
+      const subscription =
+        await stripe.subscriptions.create(subscriptionParams);
+
+      const invoice = subscription.latest_invoice as Stripe.Invoice;
+      const paymentIntent =
+        invoice?.payment_intent as Stripe.PaymentIntent | null;
+      const setupIntent =
+        subscription?.pending_setup_intent as Stripe.SetupIntent | null;
+
+      const clientSecret =
+        paymentIntent?.client_secret || setupIntent?.client_secret;
+
+      if (!clientSecret) {
+        throw new Error("Could not retrieve the client secret from Stripe.");
+      }
+
+      // Save the Stripe Customer ID
+      await User.findOneAndUpdate(
+        { email: email },
+        { $set: { stripeCustomerId: customerId } },
+        { new: true },
+      );
+
       res.send({
-        clientSecret: paymentIntent.client_secret,
-        nextAction: paymentIntent.next_action,
+        subscriptionId: subscription.id,
+        clientSecret: clientSecret,
+        customerId: customerId,
+        hasHadTrial: hasHadTrial,
       });
-    } catch (e: any) {
+    } catch (error: any) {
+      console.error("Stripe Checkout Error:", error);
       res.status(400).send({
         error: {
-          message: e.message,
+          message: error.message,
         },
       });
     }
   },
 );
 
-// router.get("/payment/next", async (req, res) => {
-//   const paymentIntent: any = req.query.payment_intent;
-//   const intent = await stripe.paymentIntents.retrieve(paymentIntent, {
-//     expand: ["payment_method"],
-//   });
-
-//   res.redirect(
-//     `/stripe/success?payment_intent_client_secret=${intent.client_secret}`,
-//   );
-// });
-
-// router.get("/success", async (req, res) => {
-//   const path = resolve(process.env.STATIC_DIR + "/success.html");
-//   res.sendFile(path);
-// });
-
+// ============================================================================
+// 2. STRIPE WEBHOOK (DATABASE SYNC)
+// ============================================================================
 router.post(
   "/webhook",
-  // Use body-parser to retrieve the raw body as a buffer.
   bodyParser.raw({ type: "application/json" }),
   async (req: express.Request, res: express.Response): Promise<void> => {
-    // Retrieve the event by verifying the signature using the raw body and secret.
     let event: Stripe.Event;
-
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
@@ -160,7 +136,7 @@ router.post(
         webhookSecret,
       );
     } catch (err) {
-      console.log(`⚠️  Webhook signature verification failed.`);
+      console.log(`Webhook signature verification failed.`);
       res.sendStatus(400);
       return;
     }
@@ -168,15 +144,88 @@ router.post(
     const data: Stripe.Event.Data = event.data;
     const eventType: string = event.type;
 
-    if (eventType === "payment_intent.succeeded") {
-      const pi: Stripe.PaymentIntent = data.object as Stripe.PaymentIntent;
-      console.log(`🔔  Webhook received: ${pi.object} ${pi.status}!`);
-      console.log("💰 Payment captured!");
-    } else if (eventType === "payment_intent.payment_failed") {
-      const pi: Stripe.PaymentIntent = data.object as Stripe.PaymentIntent;
-      console.log(`🔔  Webhook received: ${pi.object} ${pi.status}!`);
-      console.log("❌ Payment failed.");
+    switch (eventType) {
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        const subscription = data.object as Stripe.Subscription;
+
+        const stripeCustomerId = subscription.customer as string;
+        const status = subscription.status;
+
+        // Stop execution if they haven't actually entered a payment method yet!
+        if (
+          status === "incomplete" ||
+          status === "incomplete_expired" ||
+          (status === "trialing" && !subscription.default_payment_method)
+        ) {
+          console.log(
+            `⏳ User is at checkout (Status: ${status}). Waiting for card...`,
+          );
+          break;
+        }
+
+        const currentPeriodEnd = new Date(
+          subscription.current_period_end * 1000,
+        );
+        const trialEnd = subscription.trial_end
+          ? new Date(subscription.trial_end * 1000)
+          : undefined;
+
+        console.log(`Officially ${status} for customer ${stripeCustomerId}`);
+
+        await User.findOneAndUpdate(
+          { stripeCustomerId: stripeCustomerId },
+          {
+            $set: {
+              stripeSubscriptionId: subscription.id,
+              "subscription.status": status,
+              "subscription.plan": "premium",
+              "subscription.billingCycleEndsAt": currentPeriodEnd,
+              ...(trialEnd && { "subscription.trialEndsAt": trialEnd }),
+            },
+          },
+        );
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscriptionDeleted = data.object as Stripe.Subscription;
+        const stripeCustomerId = subscriptionDeleted.customer as string;
+
+        console.log(`Subscription canceled for customer ${stripeCustomerId}`);
+
+        await User.findOneAndUpdate(
+          { stripeCustomerId: stripeCustomerId },
+          {
+            $set: {
+              "subscription.status": "canceled",
+            },
+          },
+        );
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoiceFailed = data.object as Stripe.Invoice;
+        const stripeCustomerId = invoiceFailed.customer as string;
+
+        console.log(`❌ Payment failed for customer ${stripeCustomerId}`);
+
+        await User.findOneAndUpdate(
+          { stripeCustomerId: stripeCustomerId },
+          {
+            $set: {
+              "subscription.status": "past_due",
+            },
+          },
+        );
+        break;
+      }
+
+      default:
+        break;
     }
+
     res.sendStatus(200);
   },
 );

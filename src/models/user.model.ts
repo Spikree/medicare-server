@@ -11,6 +11,9 @@ export interface User extends Document {
   doctorId: string;
   createdOn: Date;
 
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+
   subscription?: {
     status: "trialing" | "active" | "past_due" | "canceled" | "expired";
     plan: "premium" | "basic";
@@ -32,6 +35,9 @@ const userSchema: Schema<User> = new Schema({
   profilePicture: { type: String },
   doctorId: { type: String },
   createdOn: { type: Date, default: () => new Date() },
+
+  stripeCustomerId: { type: String },
+  stripeSubscriptionId: { type: String },
 
   subscription: {
     status: {
