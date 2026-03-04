@@ -14,7 +14,7 @@ import Stripe from "stripe";
 const router = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_BACKEND_SECRET || "test", {
-  apiVersion: "2023-10-16",
+  apiVersion: "2026-02-25.clover",
 });
 
 // ============================================================================
@@ -38,7 +38,7 @@ router.post(
       if (
         user.subscription &&
         user.subscription.status &&
-        user.subscription.status !== "incomplete"
+        (user.subscription.status as string) !== "incomplete"
       ) {
         hasHadTrial = true;
       }
@@ -78,7 +78,7 @@ router.post(
       const subscription =
         await stripe.subscriptions.create(subscriptionParams);
 
-      const invoice = subscription.latest_invoice as Stripe.Invoice;
+      const invoice = subscription.latest_invoice as any;
       const paymentIntent =
         invoice?.payment_intent as Stripe.PaymentIntent | null;
       const setupIntent =
@@ -147,7 +147,7 @@ router.post(
     switch (eventType) {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
-        const subscription = data.object as Stripe.Subscription;
+        const subscription = data.object as any;
 
         const stripeCustomerId = subscription.customer as string;
         const status = subscription.status;
