@@ -5,7 +5,7 @@ const redisClient = createClient({
   password: process.env.REDIS_PASS,
   socket: {
     host: process.env.REDIS_HOST,
-    port: 16147,
+    port: process.env.REDIS_PORT,
   },
 });
 
@@ -21,7 +21,6 @@ async function connectRedis() {
   } catch (error) {
     console.error("Redis failed to connect, but the app is still running!");
   }
-  
 }
 
 connectRedis();

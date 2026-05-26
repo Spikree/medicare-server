@@ -1,7 +1,7 @@
 import express from "express";
 import verifyToken from "../middleware/verifytoken.middleware";
 import checkDoctorRole from "../middleware/checkdoctor.middleware";
-import User from "../models/user.model"; // ⚠️ Adjust this path to your Mongoose model
+import User from "../models/user.model";
 
 import env from "dotenv";
 import path from "path";

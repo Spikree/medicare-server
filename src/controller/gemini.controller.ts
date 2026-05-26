@@ -100,7 +100,7 @@ import { decryptString } from "../lib/crypto";
 // API for doctor to ask questions
 export const askPatientQuestion = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { patientId } = req.params;
   const { query } = req.body;
@@ -187,7 +187,7 @@ export const askPatientQuestion = async (
 
     const todaysChat = await AiChatHistory.findOne(
       { patientId: patientId },
-      { history: { $slice: -20 } }
+      { history: { $slice: -20 } },
     );
 
     // Generate AI response
@@ -216,7 +216,7 @@ export const askPatientQuestion = async (
 
 export const getAiChatHistory = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { patientId } = req.params;
 
