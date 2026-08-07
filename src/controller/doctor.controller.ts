@@ -13,7 +13,7 @@ import { getCloudinaryPublicId } from "../lib/utils";
 import AllergiesAndGeneralHealthInfo from "../models/allergiesandhealthinfo.model";
 import { generateAIResponse } from "../lib/AiSummary";
 import AiChatHistory from "../models/AiChatHistory.model";
-import redisClient from "../lib/redisClient";
+import redisClient, { isRedisAvailable } from "../lib/redisClient";
 
 const defaultRedisExpiry: number = 3600;
 
@@ -75,8 +75,10 @@ export const addNewPatient = async (
 
     await newPatient.save();
 
-    await redisClient.del(cacheKeyToDelete);
-    await redisClient.del(cacheKeyToDeleteForPatientSide);
+    if (isRedisAvailable()) {
+      await redisClient.del(cacheKeyToDelete);
+      await redisClient.del(cacheKeyToDeleteForPatientSide);
+    }
 
     res.status(200).json({
       message: "New patient added sucessfully",
@@ -99,14 +101,17 @@ export const getPatientList = async (
 
   try {
     const cacheKey = `getPatientList:${currentUser?._id}`;
-    const cachedPatients = await redisClient.get(cacheKey);
 
-    if (cachedPatients) {
-      res.status(200).json({
-        message: "Patient list fetched sucessfully (from cache)",
-        patientList: JSON.parse(cachedPatients),
-      });
-      return;
+    if (isRedisAvailable()) {
+      const cachedPatients = await redisClient.get(cacheKey);
+
+      if (cachedPatients) {
+        res.status(200).json({
+          message: "Patient list fetched sucessfully (from cache)",
+          patientList: JSON.parse(cachedPatients),
+        });
+        return;
+      }
     }
 
     const patientList = await PatientList.find({
@@ -120,11 +125,13 @@ export const getPatientList = async (
       return;
     }
 
-    await redisClient.setEx(
-      cacheKey,
-      defaultRedisExpiry,
-      JSON.stringify(patientList),
-    );
+    if (isRedisAvailable()) {
+      await redisClient.setEx(
+        cacheKey,
+        defaultRedisExpiry,
+        JSON.stringify(patientList),
+      );
+    }
 
     res.status(200).json({
       message: "Patient list fetched successfully (from DB)",
@@ -188,8 +195,10 @@ export const uploadLabResults = async (
 
     await newPatientLabResult.save();
 
-    await redisClient.del(cacheKeyToDelete);
-    await redisClient.del(cacheKeyToDeleteForPatientSide);
+    if (isRedisAvailable()) {
+      await redisClient.del(cacheKeyToDelete);
+      await redisClient.del(cacheKeyToDeleteForPatientSide);
+    }
 
     res.status(200).json({
       message: "Patient lab result uploaded sucessfully",
@@ -258,8 +267,10 @@ export const addPatientDetails = async (
 
     await patientDetail.save();
 
-    await redisClient.del(cacheKeyToDelete);
-    await redisClient.del(cacheKeyToDeleteForPatientSide);
+    if (isRedisAvailable()) {
+      await redisClient.del(cacheKeyToDelete);
+      await redisClient.del(cacheKeyToDeleteForPatientSide);
+    }
 
     res.status(200).json({
       message: "Patient details added sucessfully",
@@ -325,7 +336,9 @@ export const addPatientReview = async (
 
     await newPatientReview.save();
 
-    await redisClient.del(cacheKeyToDelete);
+    if (isRedisAvailable()) {
+      await redisClient.del(cacheKeyToDelete);
+    }
 
     res.status(200).json({
       message: "Added new patient review",
@@ -355,14 +368,17 @@ export const getPatientReview = async (
 
   try {
     const cacheKey = `getPatientReviews:${patientDetailId}`;
-    const cachedPatientReviews = await redisClient.get(cacheKey);
 
-    if (cachedPatientReviews) {
-      res.status(200).json({
-        message: "Fetched all patient reviews sucessfully ( from cache )",
-        patientReview: JSON.parse(cachedPatientReviews),
-      });
-      return;
+    if (isRedisAvailable()) {
+      const cachedPatientReviews = await redisClient.get(cacheKey);
+
+      if (cachedPatientReviews) {
+        res.status(200).json({
+          message: "Fetched all patient reviews sucessfully ( from cache )",
+          patientReview: JSON.parse(cachedPatientReviews),
+        });
+        return;
+      }
     }
 
     const patientReview = await PatientReview.find({
@@ -378,11 +394,13 @@ export const getPatientReview = async (
       return;
     }
 
-    await redisClient.setEx(
-      cacheKey,
-      defaultRedisExpiry,
-      JSON.stringify(patientReview),
-    );
+    if (isRedisAvailable()) {
+      await redisClient.setEx(
+        cacheKey,
+        defaultRedisExpiry,
+        JSON.stringify(patientReview),
+      );
+    }
 
     res.status(200).json({
       message: "Fetched all patient reviews sucessfully ( from db )",
@@ -427,14 +445,16 @@ export const getPatientDetails = async (
 
     const cacheKey = `getPatientDetails:${patientId}`;
 
-    const cachedPatientDetails = await redisClient.get(cacheKey);
+    if (isRedisAvailable()) {
+      const cachedPatientDetails = await redisClient.get(cacheKey);
 
-    if (cachedPatientDetails) {
-      res.status(200).json({
-        message: "Fetched patient details sucessfully ( from cache )",
-        patientDetails: JSON.parse(cachedPatientDetails),
-      });
-      return;
+      if (cachedPatientDetails) {
+        res.status(200).json({
+          message: "Fetched patient details sucessfully ( from cache )",
+          patientDetails: JSON.parse(cachedPatientDetails),
+        });
+        return;
+      }
     }
 
     const patientDetailsEncrypted = await PatientDetail.find({
@@ -458,11 +478,13 @@ export const getPatientDetails = async (
       medicationPrescribed: decryptString(detail.medicationPrescribed),
     }));
 
-    await redisClient.setEx(
-      cacheKey,
-      defaultRedisExpiry,
-      JSON.stringify(patientDetails),
-    );
+    if (isRedisAvailable()) {
+      await redisClient.setEx(
+        cacheKey,
+        defaultRedisExpiry,
+        JSON.stringify(patientDetails),
+      );
+    }
 
     res.status(200).json({
       message: "Fetched patient details sucessfully ( from db )",
@@ -490,14 +512,17 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
 
   try {
     const cacheKey = `getPatientLabResults:${patientId}`;
-    const cachedPatientLabDetails = await redisClient.get(cacheKey);
 
-    if (cachedPatientLabDetails) {
-      res.status(200).json({
-        message: "Fetched patient lab results sucessfully ( from cache )",
-        patientLabResults: JSON.parse(cachedPatientLabDetails),
-      });
-      return;
+    if (isRedisAvailable()) {
+      const cachedPatientLabDetails = await redisClient.get(cacheKey);
+
+      if (cachedPatientLabDetails) {
+        res.status(200).json({
+          message: "Fetched patient lab results sucessfully ( from cache )",
+          patientLabResults: JSON.parse(cachedPatientLabDetails),
+        });
+        return;
+      }
     }
 
     const patientDetail = await PatientList.findOne({
@@ -527,11 +552,13 @@ export const getPatientLabResults = async (req: Request, res: Response) => {
       return;
     }
 
-    await redisClient.setEx(
-      cacheKey,
-      defaultRedisExpiry,
-      JSON.stringify(patientLabResults),
-    );
+    if (isRedisAvailable()) {
+      await redisClient.setEx(
+        cacheKey,
+        defaultRedisExpiry,
+        JSON.stringify(patientLabResults),
+      );
+    }
 
     res.status(200).json({
       message: "Fetched patient lab results sucessfully ( from db )",
@@ -723,8 +750,10 @@ export const acceptAddRequest = async (req: Request, res: Response) => {
 
     await request?.deleteOne();
 
-    await redisClient.del(cacheKeyToDelete);
-    await redisClient.del(cacheKeyToDeleteForPatientSide);
+    if (isRedisAvailable()) {
+      await redisClient.del(cacheKeyToDelete);
+      await redisClient.del(cacheKeyToDeleteForPatientSide);
+    }
 
     res.status(200).json({
       message: "Patient added sucessfully",

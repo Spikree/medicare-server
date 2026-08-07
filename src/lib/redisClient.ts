@@ -1,5 +1,7 @@
 import { createClient } from "redis";
 
+let isRedisConnected = false;
+
 const redisClient = createClient({
   username: process.env.USER_NAME,
   password: process.env.REDIS_PASS,
@@ -10,6 +12,9 @@ const redisClient = createClient({
       : undefined,
   },
 });
+
+redisClient.on('error', () => { isRedisConnected = false });
+redisClient.on('connect', () => { isRedisConnected = true });
 
 // For testing in developement
 // const redisClient = createClient();
@@ -26,5 +31,7 @@ async function connectRedis() {
 }
 
 connectRedis();
+
+export const isRedisAvailable = (): boolean => isRedisConnected;
 
 export default redisClient;

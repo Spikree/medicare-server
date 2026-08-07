@@ -10,7 +10,7 @@ const defaultRedisExpiry: number = 3600;
 
 export const editProfile = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   if (!req.body || typeof req.body !== "object") {
     res.status(400).json({
@@ -46,7 +46,7 @@ export const editProfile = async (
         req.file.path!,
         {
           folder: "profile-picture",
-        }
+        },
       );
       fs.unlinkSync(req.file.path);
       fileLink = cloudinaryResult.secure_url;
@@ -98,7 +98,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
 export const getAllergiesAndHealthInfo = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   const { patientId } = req.params;
 
@@ -131,7 +131,7 @@ export const getAllergiesAndHealthInfo = async (
     redisClient.setEx(
       cachekey,
       defaultRedisExpiry,
-      JSON.stringify(allergiesAndHealthInfo)
+      JSON.stringify(allergiesAndHealthInfo),
     );
 
     res.status(200).json({
@@ -141,7 +141,7 @@ export const getAllergiesAndHealthInfo = async (
   } catch (error) {
     console.log(
       "error in common controller at get allergies and health info",
-      error
+      error,
     );
     res.status(500).json({
       message: "Internal server error",
