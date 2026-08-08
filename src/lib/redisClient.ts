@@ -19,7 +19,7 @@ redisClient.on('connect', () => { isRedisConnected = true });
 // For testing in developement
 // const redisClient = createClient();
 
-redisClient.on("error", (err) => console.log("Redis client error", err));
+// redisClient.on("error", (err) => console.log("Redis client error", err));
 
 async function connectRedis() {
   try {
