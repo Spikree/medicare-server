@@ -6,7 +6,6 @@ import User from "../models/user.model";
 import env from "dotenv";
 import path from "path";
 env.config({ path: "./.env" });
-const resolve = path.resolve;
 
 import bodyParser from "body-parser";
 import Stripe from "stripe";
@@ -17,41 +16,42 @@ const stripe = new Stripe(process.env.STRIPE_BACKEND_SECRET || "test", {
   apiVersion: "2026-02-25.clover",
 });
 
-// ============================================================================
-// 1. CREATE SUBSCRIPTION (WITH CONDITIONAL FREE TRIAL)
-// ============================================================================
+const getPeriodEnd = (subscription: any): Date | undefined => {
+  const raw =
+    subscription?.items?.data?.[0]?.current_period_end ??
+    subscription?.current_period_end;
+  return raw ? new Date(raw * 1000) : undefined;
+};
+
 router.post(
   "/create-subscription",
   express.json(),
-  // verifyToken,
+  verifyToken,
   async (req: express.Request, res: express.Response): Promise<void> => {
     try {
-      const { email, name, priceId, paymentMethodId } = req.body;
+      const { priceId, paymentMethodId } = req.body;
 
-      const user = await User.findOne({ email: email });
+      const userId = req?.user?._id;
+      const user = await User.findById(userId);
       if (!user) {
         throw new Error("User not found in database.");
       }
 
-      // they've successfully completed this process before.
-      let hasHadTrial = false;
-      if (
-        user.subscription &&
-        user.subscription.status &&
-        (user.subscription.status as string) !== "incomplete"
-      ) {
-        hasHadTrial = true;
-      }
+      let hasHadTrial = Boolean(user.stripeSubscriptionId);
 
-      let customerId = req.body.customerId || user.stripeCustomerId;
+      let customerId = user.stripeCustomerId;
 
       if (!customerId) {
         const customer = await stripe.customers.create({
-          email: email,
-          name: name,
+          email: user.email,
+          name: user.name,
           ...(paymentMethodId && { payment_method: paymentMethodId }),
         });
         customerId = customer.id;
+
+        await User.findByIdAndUpdate(user._id, {
+          $set: { stripeCustomerId: customerId },
+        });
       }
 
       if (paymentMethodId) {
@@ -70,7 +70,6 @@ router.post(
         expand: ["latest_invoice.payment_intent", "pending_setup_intent"],
       };
 
-      // Only add the trial if they've never had one
       if (!hasHadTrial) {
         subscriptionParams.trial_period_days = 7;
       }
@@ -91,13 +90,6 @@ router.post(
         throw new Error("Could not retrieve the client secret from Stripe.");
       }
 
-      // Save the Stripe Customer ID
-      await User.findOneAndUpdate(
-        { email: email },
-        { $set: { stripeCustomerId: customerId } },
-        { new: true },
-      );
-
       res.send({
         subscriptionId: subscription.id,
         clientSecret: clientSecret,
@@ -115,18 +107,18 @@ router.post(
   },
 );
 
-// ============================================================================
-// 2. STRIPE WEBHOOK (DATABASE SYNC)
-// ============================================================================
 router.post(
   "/webhook",
   bodyParser.raw({ type: "application/json" }),
   async (req: express.Request, res: express.Response): Promise<void> => {
     let event: Stripe.Event;
+
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      throw new Error("No Webhook secret provided");
+      console.error("No webhook secret provided");
+      res.sendStatus(500);
+      return;
     }
 
     try {
@@ -136,97 +128,90 @@ router.post(
         webhookSecret,
       );
     } catch (err) {
-      console.log(`Webhook signature verification failed.`);
+      console.log("Webhook signature verification failed.");
       res.sendStatus(400);
       return;
     }
 
-    const data: Stripe.Event.Data = event.data;
-    const eventType: string = event.type;
+    try {
+      const data: Stripe.Event.Data = event.data;
+      const eventType: string = event.type;
 
-    switch (eventType) {
-      case "customer.subscription.created":
-      case "customer.subscription.updated": {
-        const subscription = data.object as any;
+      switch (eventType) {
+        case "customer.subscription.created":
+        case "customer.subscription.updated": {
+          const subscription = data.object as any;
 
-        const stripeCustomerId = subscription.customer as string;
-        const status = subscription.status;
+          const stripeCustomerId = subscription.customer as string;
+          const status = subscription.status;
 
-        // Stop execution if they haven't actually entered a payment method yet!
-        if (
-          status === "incomplete" ||
-          status === "incomplete_expired" ||
-          (status === "trialing" && !subscription.default_payment_method)
-        ) {
-          console.log(
-            `⏳ User is at checkout (Status: ${status}). Waiting for card...`,
+          if (status === "incomplete" || status === "incomplete_expired") {
+            break;
+          }
+
+          const currentPeriodEnd = getPeriodEnd(subscription);
+          const trialEnd = subscription.trial_end
+            ? new Date(subscription.trial_end * 1000)
+            : undefined;
+
+          await User.findOneAndUpdate(
+            { stripeCustomerId: stripeCustomerId },
+            {
+              $set: {
+                stripeSubscriptionId: subscription.id,
+                "subscription.status": status,
+                "subscription.plan":
+                  status === "active" || status === "trialing"
+                    ? "premium"
+                    : "basic",
+                ...(currentPeriodEnd && {
+                  "subscription.billingCycleEndsAt": currentPeriodEnd,
+                }),
+                ...(trialEnd && { "subscription.trialEndsAt": trialEnd }),
+              },
+            },
           );
           break;
         }
 
-        const currentPeriodEnd = new Date(
-          subscription.current_period_end * 1000,
-        );
-        const trialEnd = subscription.trial_end
-          ? new Date(subscription.trial_end * 1000)
-          : undefined;
+        case "customer.subscription.deleted": {
+          const subscriptionDeleted = data.object as Stripe.Subscription;
+          const stripeCustomerId = subscriptionDeleted.customer as string;
 
-        console.log(`Officially ${status} for customer ${stripeCustomerId}`);
-
-        await User.findOneAndUpdate(
-          { stripeCustomerId: stripeCustomerId },
-          {
-            $set: {
-              stripeSubscriptionId: subscription.id,
-              "subscription.status": status,
-              "subscription.plan": "premium",
-              "subscription.billingCycleEndsAt": currentPeriodEnd,
-              ...(trialEnd && { "subscription.trialEndsAt": trialEnd }),
+          await User.findOneAndUpdate(
+            { stripeCustomerId: stripeCustomerId },
+            {
+              $set: {
+                "subscription.status": "canceled",
+                "subscription.plan": "basic",
+              },
             },
-          },
-        );
-        break;
+          );
+          break;
+        }
+
+        case "invoice.payment_failed": {
+          const invoiceFailed = data.object as Stripe.Invoice;
+          const stripeCustomerId = invoiceFailed.customer as string;
+
+          await User.findOneAndUpdate(
+            { stripeCustomerId: stripeCustomerId },
+            {
+              $set: { "subscription.status": "past_due" },
+            },
+          );
+          break;
+        }
+
+        default:
+          break;
       }
 
-      case "customer.subscription.deleted": {
-        const subscriptionDeleted = data.object as Stripe.Subscription;
-        const stripeCustomerId = subscriptionDeleted.customer as string;
-
-        console.log(`Subscription canceled for customer ${stripeCustomerId}`);
-
-        await User.findOneAndUpdate(
-          { stripeCustomerId: stripeCustomerId },
-          {
-            $set: {
-              "subscription.status": "canceled",
-            },
-          },
-        );
-        break;
-      }
-
-      case "invoice.payment_failed": {
-        const invoiceFailed = data.object as Stripe.Invoice;
-        const stripeCustomerId = invoiceFailed.customer as string;
-
-        console.log(`❌ Payment failed for customer ${stripeCustomerId}`);
-
-        await User.findOneAndUpdate(
-          { stripeCustomerId: stripeCustomerId },
-          {
-            $set: {
-              "subscription.status": "past_due",
-            },
-          },
-        );
-        break;
-      }
-
-      default:
-        break;
+      res.sendStatus(200);
+    } catch (error: any) {
+      console.error("Webhook handler error", error);
+      res.sendStatus(500);
     }
-
-    res.sendStatus(200);
   },
 );
 
